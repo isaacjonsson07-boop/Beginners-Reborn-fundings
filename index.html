@@ -89,6 +89,7 @@
     .form-group label{font-size:.65rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
     .form-group input,.form-group select{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none;transition:border-color .15s}
     .form-group input:focus,.form-group select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow)}
+    input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(69%) sepia(52%) saturate(501%) hue-rotate(107deg) brightness(92%) contrast(89%);cursor:pointer}
     .data-table{width:100%;border-collapse:collapse}
     .data-table th{text-align:left;font-size:.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;padding:.55rem .65rem;border-bottom:1px solid var(--border)}
     .data-table td{padding:.55rem .65rem;border-bottom:1px solid var(--border-light);font-size:.83rem}
@@ -194,7 +195,7 @@
           <div class="panel-header"><div class="panel-title">Add Donation</div></div>
           <form id="donation-form">
             <div class="form-row">
-              <div class="form-group"><label>Donor Name</label><input type="text" id="don-name" required placeholder="e.g. Ewoken" /></div>
+              <div class="form-group"><label>Donor Name</label><input type="text" id="don-name" required placeholder="e.g. user" /></div>
               <div class="form-group"><label>Amount (&#8364;)</label><input type="number" id="don-amount" step="0.01" min="0.01" required placeholder="10.00" /></div>
               <div class="form-group"><label>Date</label><input type="date" id="don-date" required /></div>
             </div>
