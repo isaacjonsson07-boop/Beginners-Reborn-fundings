@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Beginners Reborn - Funding Manager</title>
+  <meta name="description" content="Track donations, expenses, and server funding for Beginners Reborn." />
+  <meta property="og:title" content="Beginners Reborn - Funding Manager" />
+  <meta property="og:description" content="Live donation tracker, expense manager, and team dashboard for the Beginners Reborn gaming server." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://br-funding-manager.netlify.app" />
+  <meta name="theme-color" content="#3ECF8E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -19,12 +25,39 @@
     }
     body{font-family:Inter,-apple-system,sans-serif;background:var(--bg-root);color:var(--text-primary);min-height:100vh;line-height:1.6}
 
-    /* Layout */
+    /* ===== ONBOARDING SCREEN ===== */
+    .onboarding-overlay{position:fixed;inset:0;background:var(--bg-root);z-index:500;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+    .onboarding-overlay.hidden{opacity:0;pointer-events:none}
+    .onboarding-box{text-align:center;max-width:420px;width:90%}
+    .onboarding-box .logo-big{font-family:JetBrains Mono,monospace;font-weight:700;font-size:2rem;color:var(--green);margin-bottom:.25rem}
+    .onboarding-box .logo-sub{font-size:.8rem;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:2.5rem}
+    .onboarding-box .welcome-text{font-size:1.1rem;color:var(--text-secondary);margin-bottom:1.5rem}
+    .onboarding-box .ob-input{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:1rem;padding:.8rem 1rem;outline:none;text-align:center;margin-bottom:.75rem;transition:border-color .2s}
+    .onboarding-box .ob-input:focus{border-color:var(--green);box-shadow:0 0 0 4px var(--green-glow)}
+    .onboarding-box .ob-input::placeholder{color:var(--text-muted)}
+    .onboarding-box .ob-btn{width:100%;background:var(--green);color:#000;border:none;border-radius:10px;font-family:Inter,sans-serif;font-size:1rem;font-weight:600;padding:.8rem;cursor:pointer;transition:all .2s}
+    .onboarding-box .ob-btn:hover{background:#34b87a;box-shadow:0 0 30px var(--green-glow-strong)}
+    .onboarding-box .ob-btn:disabled{opacity:.4;cursor:not-allowed}
+    .onboarding-box .ob-hint{font-size:.75rem;color:var(--text-muted);margin-top:1rem}
+    .ob-glow{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(62,207,142,.15) 0%,transparent 70%);margin:0 auto 1.5rem}
+    .ob-glow-inner{width:60px;height:60px;border-radius:50%;background:var(--green);margin:30px auto;display:flex;align-items:center;justify-content:center}
+    .ob-glow-inner svg{width:30px;height:30px;color:#000}
+
+    /* ===== LAYOUT ===== */
     .app-layout{display:flex;min-height:100vh}
+    .app-wrapper{display:none}
+    .app-wrapper.visible{display:flex;width:100%;min-height:100vh}
     .sidebar{width:220px;background:var(--bg-primary);border-right:1px solid var(--border);padding:1.5rem 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
-    .sidebar-logo{padding:0 1.25rem;margin-bottom:2rem}
+    .sidebar-logo{padding:0 1.25rem;margin-bottom:1.5rem}
     .sidebar-logo .brand{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.95rem;color:var(--green);letter-spacing:-.5px}
     .sidebar-logo .sub{font-size:.7rem;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+    .sidebar-user{padding:.6rem 1.25rem;margin-bottom:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem}
+    .sidebar-user-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;color:#000;flex-shrink:0}
+    .sidebar-user-info{min-width:0;flex:1}
+    .sidebar-user-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sidebar-user-role{font-size:.65rem;color:var(--text-muted)}
+    .sidebar-signout{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.65rem;padding:2px 6px;border-radius:4px;transition:all .15s}
+    .sidebar-signout:hover{color:var(--red);background:var(--red-glow)}
     .nav-item{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.25rem;color:var(--text-muted);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:2px solid transparent;text-decoration:none}
     .nav-item:hover{color:var(--text-secondary);background:rgba(255,255,255,.02)}
     .nav-item.active{color:var(--text-primary);background:rgba(62,207,142,.05);border-left-color:var(--green)}
@@ -35,8 +68,6 @@
     .right-panel{width:280px;background:var(--bg-primary);border-left:1px solid var(--border);padding:1.25rem;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
     .page-title{font-family:JetBrains Mono,monospace;font-size:1.3rem;font-weight:700;margin-bottom:1.25rem;letter-spacing:-.5px}
     .page{display:none}.page.active{display:block}
-
-    /* Stats */
     .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem}
     .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;transition:all .2s}
     .stat-card:hover{border-color:var(--green);box-shadow:0 0 30px var(--green-glow)}
@@ -44,28 +75,20 @@
     .stat-value{font-family:JetBrains Mono,monospace;font-size:1.6rem;font-weight:700;line-height:1}
     .stat-value.green{color:var(--green)}.stat-value.red{color:var(--red)}.stat-value.blue{color:var(--blue)}.stat-value.amber{color:var(--amber)}
     .stat-sub{font-size:.7rem;color:var(--text-muted);margin-top:.4rem}
-
-    /* Panels */
     .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem}
     .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;padding-bottom:.6rem;border-bottom:1px solid var(--border-light)}
     .panel-title{font-family:JetBrains Mono,monospace;font-size:.8rem;font-weight:600;letter-spacing:-.3px;color:var(--text-secondary)}
-
-    /* Buttons */
     .btn{font-family:Inter,sans-serif;font-size:.8rem;font-weight:500;padding:.45rem .9rem;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.4rem}
     .btn-primary{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
     .btn-primary:hover{background:#34b87a;box-shadow:0 0 20px var(--green-glow-strong)}
     .btn-ghost{background:transparent;color:var(--text-secondary)}.btn-ghost:hover{color:var(--text-primary);background:var(--bg-card-hover)}
     .btn-danger{background:transparent;color:var(--red);border-color:transparent}.btn-danger:hover{background:var(--red-glow)}
     .btn-sm{padding:.2rem .45rem;font-size:.7rem}
-
-    /* Forms */
     .form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem}
     .form-group{display:flex;flex-direction:column;gap:.25rem}
     .form-group label{font-size:.65rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-    .form-group input,.form-group select,.form-group textarea{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none;transition:border-color .15s}
+    .form-group input,.form-group select{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none;transition:border-color .15s}
     .form-group input:focus,.form-group select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow)}
-
-    /* Tables */
     .data-table{width:100%;border-collapse:collapse}
     .data-table th{text-align:left;font-size:.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;padding:.55rem .65rem;border-bottom:1px solid var(--border)}
     .data-table td{padding:.55rem .65rem;border-bottom:1px solid var(--border-light);font-size:.83rem}
@@ -73,8 +96,6 @@
     .data-table .amount{font-family:JetBrains Mono,monospace;font-weight:600;font-size:.85rem}
     .data-table .date{color:var(--text-muted);font-size:.78rem}
     .data-table .actions{display:flex;gap:.2rem}
-
-    /* Leaderboard */
     .leaderboard-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .4rem;border-radius:6px;transition:background .15s}
     .leaderboard-item:hover{background:rgba(255,255,255,.02)}
     .lb-rank{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.8rem;width:1.6rem;height:1.6rem;display:flex;align-items:center;justify-content:center;border-radius:4px;background:var(--bg-secondary);color:var(--text-muted)}
@@ -86,45 +107,29 @@
     .table-scroll{overflow-x:auto}
     .empty-state{text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.85rem}
     select option{background:var(--bg-card);color:var(--text-primary)}
-
-    /* Team Panel (right side) */
     .team-section-title{font-family:JetBrains Mono,monospace;font-size:.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:.6rem;margin-top:1rem}
     .team-section-title:first-child{margin-top:0}
-    .team-member{display:flex;align-items:center;gap:.6rem;padding:.45rem .4rem;border-radius:6px;transition:background .15s;cursor:default}
+    .team-member{display:flex;align-items:center;gap:.6rem;padding:.45rem .4rem;border-radius:6px;transition:background .15s}
     .team-member:hover{background:rgba(255,255,255,.03)}
     .team-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;color:#000;position:relative;flex-shrink:0}
     .team-avatar .status-dot{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg-primary)}
-    .status-online{background:#3ECF8E}
-    .status-idle{background:#f0b429}
-    .status-offline{background:#666}
+    .status-online{background:#3ECF8E}.status-idle{background:#f0b429}.status-offline{background:#666}
     .team-info{min-width:0;flex:1}
     .team-name{font-size:.83rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .team-role{font-size:.7rem;color:var(--text-muted)}
+    .team-role{font-size:.7rem}
     .team-role.owner{color:var(--red)}.team-role.admin{color:var(--amber)}.team-role.mod{color:var(--blue)}.team-role.member{color:var(--text-muted)}
-    .team-actions-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;font-size:.75rem;opacity:0;transition:opacity .15s}
-    .team-member:hover .team-actions-btn{opacity:1}
     .right-panel-header{font-family:JetBrains Mono,monospace;font-size:.85rem;font-weight:600;color:var(--text-primary);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
     .member-count{font-family:JetBrains Mono,monospace;font-size:.7rem;color:var(--text-muted);font-weight:400}
-    .add-member-form{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)}
-    .add-member-form .form-group{margin-bottom:.5rem}
-    .add-member-form input,.add-member-form select{font-size:.8rem;padding:.4rem .6rem}
-    .add-member-form label{font-size:.6rem}
-
-    /* Toast */
     .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
     .toast{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.85rem;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:slideIn .3s ease;display:flex;align-items:center;gap:.5rem}
     .toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}
     @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-
-    /* Modal */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .15s}
     .modal-overlay.open{opacity:1;pointer-events:all}
     .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;width:90%;max-width:500px;transform:scale(.95);transition:transform .15s}
     .modal-overlay.open .modal{transform:scale(1)}
     .modal-title{font-family:JetBrains Mono,monospace;font-size:1rem;font-weight:600;margin-bottom:1rem}
     .modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
-
-    /* Mobile */
     .mobile-header{display:none;background:var(--bg-primary);border-bottom:1px solid var(--border);padding:.75rem 1rem;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:101}
     .mobile-header .brand{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.9rem;color:var(--green)}
     .hamburger{background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:.25rem}
@@ -136,6 +141,20 @@
 </head>
 <body>
 
+<!-- ONBOARDING -->
+<div class="onboarding-overlay" id="onboarding">
+  <div class="onboarding-box">
+    <div class="ob-glow"><div class="ob-glow-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div></div>
+    <div class="logo-big">BR Funding</div>
+    <div class="logo-sub">Manager</div>
+    <p class="welcome-text">Welcome! Enter your name to get started.</p>
+    <input class="ob-input" id="ob-name" type="text" placeholder="Your name" maxlength="30" autocomplete="off" />
+    <button class="ob-btn" id="ob-submit" disabled>Join Team</button>
+    <p class="ob-hint">Your name will be visible to other team members</p>
+  </div>
+</div>
+
+<!-- APP -->
 <div class="mobile-header">
   <div class="brand">BR Funding</div>
   <button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">
@@ -143,9 +162,10 @@
   </button>
 </div>
 
-<div class="app-layout">
+<div class="app-wrapper" id="app-wrapper">
   <aside class="sidebar">
     <div class="sidebar-logo"><div class="brand">BR Funding</div><div class="sub">Manager</div></div>
+    <div class="sidebar-user" id="sidebar-user"></div>
     <nav class="sidebar-nav">
       <a class="nav-item active" data-page="dashboard" onclick="navigate(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
       <a class="nav-item" data-page="donations" onclick="navigate(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Donations</a>
@@ -157,7 +177,6 @@
 
   <div class="content-area">
     <div class="main-content">
-      <!-- DASHBOARD -->
       <section class="page active" id="page-dashboard">
         <div class="page-title">Dashboard</div>
         <div class="stats-grid" id="dashboard-stats"></div>
@@ -168,7 +187,6 @@
         <div class="panel"><div class="panel-header"><div class="panel-title">Recent Activity</div></div><div class="table-scroll"><table class="data-table" id="dashboard-recent"></table></div></div>
       </section>
 
-      <!-- DONATIONS -->
       <section class="page" id="page-donations">
         <div class="page-title">Donations</div>
         <div class="panel">
@@ -179,10 +197,7 @@
               <div class="form-group"><label>Amount (&#8364;)</label><input type="number" id="don-amount" step="0.01" min="0.01" required placeholder="10.00" /></div>
               <div class="form-group"><label>Date</label><input type="date" id="don-date" required /></div>
             </div>
-            <div class="form-row">
-              <div class="form-group"><label>Logged By</label><select id="don-logged-by"></select></div>
-              <div class="form-group" style="grid-column:span 2"><label>Notes (optional)</label><input type="text" id="don-notes" placeholder="e.g. VIP whitelist, event entry..." /></div>
-            </div>
+            <div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes (optional)</label><input type="text" id="don-notes" placeholder="e.g. VIP whitelist, event entry..." /></div></div>
             <button type="submit" class="btn btn-primary">+ Add Donation</button>
           </form>
         </div>
@@ -192,7 +207,6 @@
         </div>
       </section>
 
-      <!-- EXPENSES -->
       <section class="page" id="page-expenses">
         <div class="page-title">Expenses</div>
         <div class="panel">
@@ -206,16 +220,14 @@
             <div class="form-row">
               <div class="form-group"><label>Date</label><input type="date" id="exp-date" required /></div>
               <div class="form-group"><label>Recurring?</label><select id="exp-recurring"><option value="false">No</option><option value="true">Yes (monthly)</option></select></div>
-              <div class="form-group"><label>Logged By</label><select id="exp-logged-by"></select></div>
+              <div class="form-group"><label>Notes (optional)</label><input type="text" id="exp-notes" placeholder="Additional details..." /></div>
             </div>
-            <div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes (optional)</label><input type="text" id="exp-notes" placeholder="Additional details..." /></div></div>
             <button type="submit" class="btn btn-primary">+ Add Expense</button>
           </form>
         </div>
         <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div><div class="table-scroll"><table class="data-table" id="expenses-table"></table></div></div>
       </section>
 
-      <!-- TEAM -->
       <section class="page" id="page-team">
         <div class="page-title">Team Management</div>
         <div class="panel">
@@ -232,7 +244,6 @@
         <div class="panel"><div class="panel-header"><div class="panel-title">All Members</div></div><div class="table-scroll"><table class="data-table" id="team-table"></table></div></div>
       </section>
 
-      <!-- REPORTS -->
       <section class="page" id="page-reports">
         <div class="page-title">Reports</div>
         <div class="stats-grid" id="report-stats"></div>
@@ -244,7 +255,6 @@
       </section>
     </div>
 
-    <!-- RIGHT PANEL - Team Members -->
     <div class="right-panel">
       <div class="right-panel-header">Team <span class="member-count" id="member-count"></span></div>
       <div id="right-team-list"></div>
@@ -252,7 +262,6 @@
   </div>
 </div>
 
-<!-- Modals -->
 <div class="modal-overlay" id="edit-modal"><div class="modal"><div class="modal-title" id="modal-title">Edit</div><form id="modal-form"></form><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button><button type="button" class="btn btn-primary" id="modal-save">Save</button></div></div></div>
 <div class="modal-overlay" id="confirm-modal"><div class="modal"><div class="modal-title">Confirm Delete</div><p style="color:var(--text-secondary);margin-bottom:.5rem" id="confirm-text">Are you sure?</p><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeConfirm()">Cancel</button><button type="button" class="btn btn-danger" id="confirm-yes" style="border:1px solid var(--red)">Delete</button></div></div></div>
 <div class="toast-container" id="toasts"></div>
@@ -262,19 +271,87 @@ var SUPABASE_URL = 'https://exlzwftgqlbtyytahtml.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4bHp3ZnRncWxidHl5dGFodG1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzk5MDUsImV4cCI6MjA4ODgxNTkwNX0.CgWv2155yXxhKtkVtmvbs-wkL20FP5GaZgi0LP0vkSo';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var donations = [], expenses = [], categories = [], teamMembers = [];
+var currentUser = null;
 var dashboardChart = null, reportBarChart = null, reportPieChart = null;
 var roleColors = { Owner: '#f75f5f', Admin: '#f0b429', Mod: '#3b82f6', Member: '#666' };
 var avatarColors = ['#3ECF8E','#3b82f6','#f0b429','#f75f5f','#8b5cf6','#ec4899','#06b6d4','#10b981'];
 Chart.defaults.color = '#666'; Chart.defaults.borderColor = 'rgba(42,42,42,0.5)'; Chart.defaults.font.family = 'Inter';
 
-function navigate(el) {
-  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  el.classList.add('active');
-  document.getElementById('page-' + el.dataset.page).classList.add('active');
-  if (el.dataset.page === 'reports') renderReports();
-  document.querySelector('.sidebar').classList.remove('open');
+// ===== ONBOARDING =====
+var obInput = document.getElementById('ob-name');
+var obBtn = document.getElementById('ob-submit');
+obInput.addEventListener('input', function() { obBtn.disabled = obInput.value.trim().length < 2; });
+obInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !obBtn.disabled) obBtn.click(); });
+obBtn.addEventListener('click', async function() {
+  var name = obInput.value.trim();
+  if (name.length < 2) return;
+  obBtn.disabled = true;
+  obBtn.textContent = 'Joining...';
+  // Check if name exists already
+  var existing = await sb.from('team_members').select('*').ilike('name', name).limit(1);
+  if (existing.data && existing.data.length > 0) {
+    currentUser = existing.data[0];
+  } else {
+    var result = await sb.from('team_members').insert({ name: name, role: 'Member', status: 'online' }).select().single();
+    if (result.error) { obBtn.textContent = 'Join Team'; obBtn.disabled = false; return; }
+    currentUser = result.data;
+  }
+  // Update status to online
+  await sb.from('team_members').update({ status: 'online' }).eq('id', currentUser.id);
+  localStorage.setItem('br_user_id', currentUser.id);
+  localStorage.setItem('br_user_name', currentUser.name);
+  showApp();
+});
+
+async function checkExistingUser() {
+  var userId = localStorage.getItem('br_user_id');
+  if (!userId) { document.getElementById('onboarding').style.display = 'flex'; return; }
+  var result = await sb.from('team_members').select('*').eq('id', userId).single();
+  if (result.data) {
+    currentUser = result.data;
+    await sb.from('team_members').update({ status: 'online' }).eq('id', currentUser.id);
+    showApp();
+  } else {
+    localStorage.removeItem('br_user_id');
+    localStorage.removeItem('br_user_name');
+    document.getElementById('onboarding').style.display = 'flex';
+  }
 }
+
+function showApp() {
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('app-wrapper').classList.add('visible');
+  renderSidebarUser();
+  loadAll();
+}
+
+function signOut() {
+  if (currentUser) sb.from('team_members').update({ status: 'offline' }).eq('id', currentUser.id);
+  localStorage.removeItem('br_user_id');
+  localStorage.removeItem('br_user_name');
+  currentUser = null;
+  document.getElementById('app-wrapper').classList.remove('visible');
+  document.getElementById('onboarding').classList.remove('hidden');
+  document.getElementById('ob-name').value = '';
+  document.getElementById('ob-submit').disabled = true;
+  document.getElementById('ob-submit').textContent = 'Join Team';
+}
+
+function renderSidebarUser() {
+  if (!currentUser) return;
+  var color = hashColor(currentUser.name);
+  document.getElementById('sidebar-user').innerHTML =
+    '<div class="sidebar-user-avatar" style="background:' + color + '">' + getInitials(currentUser.name) + '</div>' +
+    '<div class="sidebar-user-info"><div class="sidebar-user-name">' + currentUser.name + '</div><div class="sidebar-user-role">' + currentUser.role + '</div></div>' +
+    '<button class="sidebar-signout" onclick="signOut()" title="Sign out">Exit</button>';
+}
+
+// Set offline on tab close
+window.addEventListener('beforeunload', function() {
+  if (currentUser) navigator.sendBeacon(SUPABASE_URL + '/rest/v1/team_members?id=eq.' + currentUser.id, '');
+});
+
+// ===== HELPERS =====
 function toast(msg, type) { type = type || 'success'; var el = document.createElement('div'); el.className = 'toast ' + type; el.textContent = (type === 'success' ? '\u2713 ' : '\u2717 ') + msg; document.getElementById('toasts').appendChild(el); setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 300); }, 3000); }
 function fmt(n) { return Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '\u20AC'; }
 function fmtDate(d) { if (!d) return ''; return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
@@ -283,6 +360,7 @@ function getMonthKey(d) { var dt = new Date(d + 'T00:00:00'); return dt.getFullY
 function getMonthLabel(k) { var p = k.split('-'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(p[1]) - 1] + ' ' + p[0]; }
 function getInitials(name) { return name.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2); }
 function hashColor(name) { var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h); return avatarColors[Math.abs(h) % avatarColors.length]; }
+function navigate(el) { document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); }); document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); }); el.classList.add('active'); document.getElementById('page-' + el.dataset.page).classList.add('active'); if (el.dataset.page === 'reports') renderReports(); document.querySelector('.sidebar').classList.remove('open'); }
 
 async function loadAll() {
   var results = await Promise.all([
@@ -291,202 +369,94 @@ async function loadAll() {
     sb.from('expense_categories').select('*').order('name'),
     sb.from('team_members').select('*').order('created_at')
   ]);
-  donations = results[0].data || [];
-  expenses = results[1].data || [];
-  categories = results[2].data || [];
-  teamMembers = results[3].data || [];
+  donations = results[0].data || []; expenses = results[1].data || []; categories = results[2].data || []; teamMembers = results[3].data || [];
   renderAll();
 }
+function renderAll() { renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderTeamPanel(); renderTeamPage(); }
 
-function renderAll() { renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderLoggedBySelects(); renderTeamPanel(); renderTeamPage(); }
-
-// ===== RIGHT PANEL TEAM LIST =====
+// ===== RIGHT PANEL =====
 function renderTeamPanel() {
   var roleOrder = ['Owner', 'Admin', 'Mod', 'Member'];
-  var grouped = {};
-  roleOrder.forEach(function(r) { grouped[r] = []; });
-  teamMembers.forEach(function(m) {
-    if (!grouped[m.role]) grouped[m.role] = [];
-    grouped[m.role].push(m);
-  });
-  var html = '';
-  var total = teamMembers.length;
+  var grouped = {}; roleOrder.forEach(function(r) { grouped[r] = []; });
+  teamMembers.forEach(function(m) { if (!grouped[m.role]) grouped[m.role] = []; grouped[m.role].push(m); });
+  var html = ''; var total = teamMembers.length;
   document.getElementById('member-count').textContent = '- ' + total;
   roleOrder.forEach(function(role) {
     if (grouped[role].length === 0) return;
     html += '<div class="team-section-title">' + role + 's \u2014 ' + grouped[role].length + '</div>';
     grouped[role].forEach(function(m) {
-      var color = hashColor(m.name);
-      var statusClass = 'status-' + (m.status || 'offline');
-      html += '<div class="team-member">' +
-        '<div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div>' +
-        '<div class="team-info"><div class="team-name">' + m.name + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + (m.discord_name || m.role) + '</div></div></div>';
+      var color = hashColor(m.name); var statusClass = 'status-' + (m.status || 'offline');
+      var isYou = currentUser && m.id === currentUser.id;
+      html += '<div class="team-member"><div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div><div class="team-info"><div class="team-name">' + m.name + (isYou ? ' <span style="color:var(--green);font-size:.7rem">(you)</span>' : '') + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + (m.discord_name || m.role) + '</div></div></div>';
     });
   });
   if (total === 0) html = '<div class="empty-state">No team members yet</div>';
   document.getElementById('right-team-list').innerHTML = html;
 }
 
-// ===== LOGGED BY SELECTS =====
-function renderLoggedBySelects() {
-  var opts = '<option value="">-- Select --</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '">' + m.name + '</option>'; }).join('');
-  var donSel = document.getElementById('don-logged-by');
-  var expSel = document.getElementById('exp-logged-by');
-  if (donSel) donSel.innerHTML = opts;
-  if (expSel) expSel.innerHTML = opts;
-}
-
 // ===== TEAM PAGE =====
 function renderTeamPage() {
-  if (teamMembers.length === 0) {
-    document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="5"><div class="empty-state">No team members yet</div></td></tr></tbody>';
-    return;
-  }
-  var rows = teamMembers.map(function(m) {
-    return '<tr><td><strong>' + m.name + '</strong></td>' +
-      '<td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td>' +
-      '<td style="color:var(--text-muted)">' + (m.discord_name || '\u2014') + '</td>' +
-      '<td class="date">' + fmtDate(m.joined_at) + '</td>' +
-      '<td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
-  }).join('');
-  document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Discord</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody>';
+  if (teamMembers.length === 0) { document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="5"><div class="empty-state">No team members yet</div></td></tr></tbody>'; return; }
+  document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Discord</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + teamMembers.map(function(m) {
+    return '<tr><td><strong>' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td style="color:var(--text-muted)">' + (m.discord_name || '\u2014') + '</td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
+  }).join('') + '</tbody>';
 }
-
-document.getElementById('team-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var result = await sb.from('team_members').insert({ name: document.getElementById('tm-name').value.trim(), discord_name: document.getElementById('tm-discord').value.trim() || null, role: document.getElementById('tm-role').value });
-  if (result.error) { toast('Failed to add member', 'error'); return; }
-  toast('Team member added!');
-  document.getElementById('team-form').reset();
-  await loadAll();
-});
-
-async function deleteMember(id) {
-  var m = teamMembers.find(function(x) { return x.id === id; });
-  openConfirm('Remove <strong>' + m.name + '</strong> from the team?', async function() {
-    await sb.from('team_members').delete().eq('id', id);
-    toast('Member removed');
-    await loadAll();
-  });
-}
-
+document.getElementById('team-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('team_members').insert({ name: document.getElementById('tm-name').value.trim(), discord_name: document.getElementById('tm-discord').value.trim() || null, role: document.getElementById('tm-role').value }); if (result.error) { toast('Failed to add member', 'error'); return; } toast('Team member added!'); document.getElementById('team-form').reset(); await loadAll(); });
+async function deleteMember(id) { var m = teamMembers.find(function(x) { return x.id === id; }); openConfirm('Remove <strong>' + m.name + '</strong> from the team?', async function() { await sb.from('team_members').delete().eq('id', id); toast('Member removed'); await loadAll(); }); }
 async function editMember(id) {
   var m = teamMembers.find(function(x) { return x.id === id; });
   var roleOpts = ['Owner','Admin','Mod','Member'].map(function(r) { return '<option value="' + r + '" ' + (r === m.role ? 'selected' : '') + '>' + r + '</option>'; }).join('');
   var statusOpts = ['online','idle','offline'].map(function(s) { return '<option value="' + s + '" ' + (s === m.status ? 'selected' : '') + '>' + s + '</option>'; }).join('');
-  openModal('Edit Member',
-    '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="edit-tm-name" value="' + m.name + '"/></div><div class="form-group"><label>Discord</label><input type="text" id="edit-tm-discord" value="' + (m.discord_name || '') + '"/></div><div class="form-group"><label>Role</label><select id="edit-tm-role">' + roleOpts + '</select></div></div>' +
-    '<div class="form-row"><div class="form-group"><label>Status</label><select id="edit-tm-status">' + statusOpts + '</select></div></div>',
-    async function() {
-      await sb.from('team_members').update({ name: document.getElementById('edit-tm-name').value.trim(), discord_name: document.getElementById('edit-tm-discord').value.trim() || null, role: document.getElementById('edit-tm-role').value, status: document.getElementById('edit-tm-status').value }).eq('id', id);
-      toast('Member updated!');
-      closeModal();
-      await loadAll();
-    }
-  );
+  openModal('Edit Member', '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="edit-tm-name" value="' + m.name + '"/></div><div class="form-group"><label>Discord</label><input type="text" id="edit-tm-discord" value="' + (m.discord_name || '') + '"/></div><div class="form-group"><label>Role</label><select id="edit-tm-role">' + roleOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Status</label><select id="edit-tm-status">' + statusOpts + '</select></div></div>', async function() {
+    await sb.from('team_members').update({ name: document.getElementById('edit-tm-name').value.trim(), discord_name: document.getElementById('edit-tm-discord').value.trim() || null, role: document.getElementById('edit-tm-role').value, status: document.getElementById('edit-tm-status').value }).eq('id', id);
+    toast('Member updated!'); closeModal(); await loadAll();
+    if (currentUser && id === currentUser.id) { currentUser.name = document.getElementById('edit-tm-name').value.trim(); currentUser.role = document.getElementById('edit-tm-role').value; renderSidebarUser(); }
+  });
 }
 
 // ===== DASHBOARD =====
 function renderDashboard() {
-  var totalDon = donations.reduce(function(s, d) { return s + Number(d.amount); }, 0);
-  var totalExp = expenses.reduce(function(s, e) { return s + Number(e.amount); }, 0);
-  var balance = totalDon - totalExp;
+  var totalDon = donations.reduce(function(s, d) { return s + Number(d.amount); }, 0); var totalExp = expenses.reduce(function(s, e) { return s + Number(e.amount); }, 0); var balance = totalDon - totalExp;
   var donorSet = {}; donations.forEach(function(d) { donorSet[d.donor_name.toLowerCase()] = true; });
-  document.getElementById('dashboard-stats').innerHTML =
-    '<div class="stat-card"><div class="stat-label">Total Donations</div><div class="stat-value green">' + fmt(totalDon) + '</div><div class="stat-sub">' + donations.length + ' donations</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value red">' + fmt(totalExp) + '</div><div class="stat-sub">' + expenses.length + ' expenses</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value ' + (balance >= 0 ? 'green' : 'red') + '">' + (balance >= 0 ? '+' : '') + fmt(balance) + '</div><div class="stat-sub">' + (balance >= 0 ? 'Surplus' : 'Deficit') + '</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Unique Donors</div><div class="stat-value amber">' + Object.keys(donorSet).length + '</div><div class="stat-sub">supporters</div></div>';
+  document.getElementById('dashboard-stats').innerHTML = '<div class="stat-card"><div class="stat-label">Total Donations</div><div class="stat-value green">' + fmt(totalDon) + '</div><div class="stat-sub">' + donations.length + ' donations</div></div><div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value red">' + fmt(totalExp) + '</div><div class="stat-sub">' + expenses.length + ' expenses</div></div><div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value ' + (balance >= 0 ? 'green' : 'red') + '">' + (balance >= 0 ? '+' : '') + fmt(balance) + '</div><div class="stat-sub">' + (balance >= 0 ? 'Surplus' : 'Deficit') + '</div></div><div class="stat-card"><div class="stat-label">Unique Donors</div><div class="stat-value amber">' + Object.keys(donorSet).length + '</div><div class="stat-sub">supporters</div></div>';
   renderLeaderboard('dashboard-leaderboard', 5);
-  var recent = [];
-  donations.forEach(function(d) { recent.push(Object.assign({}, d, { type: 'donation' })); });
-  expenses.forEach(function(e) { recent.push(Object.assign({}, e, { type: 'expense' })); });
-  recent.sort(function(a, b) { return b.date.localeCompare(a.date); });
-  recent = recent.slice(0, 8);
-  var rows = recent.map(function(r) {
-    var isDon = r.type === 'donation'; var color = isDon ? 'var(--green)' : 'var(--red)';
-    return '<tr><td><span style="color:' + color + ';font-weight:500">' + (isDon ? '+ Donation' : '- Expense') + '</span></td><td>' + (isDon ? r.donor_name : r.description) + '</td><td class="amount" style="color:' + color + '">' + (isDon ? '+' : '-') + fmt(r.amount) + '</td><td class="date">' + fmtDate(r.date) + '</td>' + (r.logged_by ? '<td style="color:var(--text-muted);font-size:.75rem">' + r.logged_by + '</td>' : '<td></td>') + '</tr>';
-  }).join('');
-  document.getElementById('dashboard-recent').innerHTML = '<thead><tr><th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Logged By</th></tr></thead><tbody>' + rows + '</tbody>';
+  var recent = []; donations.forEach(function(d) { recent.push(Object.assign({}, d, { type: 'donation' })); }); expenses.forEach(function(e) { recent.push(Object.assign({}, e, { type: 'expense' })); }); recent.sort(function(a, b) { return b.date.localeCompare(a.date); }); recent = recent.slice(0, 8);
+  document.getElementById('dashboard-recent').innerHTML = '<thead><tr><th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Logged By</th></tr></thead><tbody>' + recent.map(function(r) { var isDon = r.type === 'donation'; var color = isDon ? 'var(--green)' : 'var(--red)'; return '<tr><td><span style="color:' + color + ';font-weight:500">' + (isDon ? '+ Donation' : '- Expense') + '</span></td><td>' + (isDon ? r.donor_name : r.description) + '</td><td class="amount" style="color:' + color + '">' + (isDon ? '+' : '-') + fmt(r.amount) + '</td><td class="date">' + fmtDate(r.date) + '</td><td style="color:var(--text-muted);font-size:.75rem">' + (r.logged_by || '\u2014') + '</td></tr>'; }).join('') + '</tbody>';
   renderDashboardChart();
 }
-function renderDashboardChart() {
-  var months = {};
-  donations.forEach(function(d) { var k = getMonthKey(d.date); if (!months[k]) months[k] = { don: 0, exp: 0 }; months[k].don += Number(d.amount); });
-  expenses.forEach(function(e) { var k = getMonthKey(e.date); if (!months[k]) months[k] = { don: 0, exp: 0 }; months[k].exp += Number(e.amount); });
-  var sorted = Object.keys(months).sort().slice(-6);
-  var ctx = document.getElementById('dashboard-chart');
-  if (dashboardChart) dashboardChart.destroy();
-  dashboardChart = new Chart(ctx, { type: 'line', data: { labels: sorted.map(getMonthLabel), datasets: [{ label: 'Donations', data: sorted.map(function(k) { return months[k].don; }), borderColor: '#3ECF8E', backgroundColor: 'rgba(62,207,142,0.08)', fill: true, tension: .4, borderWidth: 2, pointBackgroundColor: '#3ECF8E', pointRadius: 3 }, { label: 'Expenses', data: sorted.map(function(k) { return months[k].exp; }), borderColor: '#f75f5f', backgroundColor: 'rgba(247,95,95,0.08)', fill: true, tension: .4, borderWidth: 2, pointBackgroundColor: '#f75f5f', pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12, padding: 16 } } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: function(v) { return v + '\u20AC'; } } } } } });
-}
-function renderLeaderboard(id, limit) {
-  var grouped = {}; donations.forEach(function(d) { grouped[d.donor_name] = (grouped[d.donor_name] || 0) + Number(d.amount); });
-  var sorted = Object.entries(grouped).sort(function(a, b) { return b[1] - a[1]; }); if (limit) sorted = sorted.slice(0, limit);
-  if (sorted.length === 0) { document.getElementById(id).innerHTML = '<div class="empty-state">No donations yet</div>'; return; }
-  document.getElementById(id).innerHTML = sorted.map(function(item, i) { return '<div class="leaderboard-item"><div class="lb-rank ' + (i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '') + '">' + (i + 1) + '</div><div class="lb-name">' + item[0] + '</div><div class="lb-amount">' + fmt(item[1]) + '</div></div>'; }).join('');
-}
+function renderDashboardChart() { var months = {}; donations.forEach(function(d) { var k = getMonthKey(d.date); if (!months[k]) months[k] = { don: 0, exp: 0 }; months[k].don += Number(d.amount); }); expenses.forEach(function(e) { var k = getMonthKey(e.date); if (!months[k]) months[k] = { don: 0, exp: 0 }; months[k].exp += Number(e.amount); }); var sorted = Object.keys(months).sort().slice(-6); var ctx = document.getElementById('dashboard-chart'); if (dashboardChart) dashboardChart.destroy(); dashboardChart = new Chart(ctx, { type: 'line', data: { labels: sorted.map(getMonthLabel), datasets: [{ label: 'Donations', data: sorted.map(function(k) { return months[k].don; }), borderColor: '#3ECF8E', backgroundColor: 'rgba(62,207,142,0.08)', fill: true, tension: .4, borderWidth: 2, pointBackgroundColor: '#3ECF8E', pointRadius: 3 }, { label: 'Expenses', data: sorted.map(function(k) { return months[k].exp; }), borderColor: '#f75f5f', backgroundColor: 'rgba(247,95,95,0.08)', fill: true, tension: .4, borderWidth: 2, pointBackgroundColor: '#f75f5f', pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12, padding: 16 } } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: function(v) { return v + '\u20AC'; } } } } } }); }
+function renderLeaderboard(id, limit) { var grouped = {}; donations.forEach(function(d) { grouped[d.donor_name] = (grouped[d.donor_name] || 0) + Number(d.amount); }); var sorted = Object.entries(grouped).sort(function(a, b) { return b[1] - a[1]; }); if (limit) sorted = sorted.slice(0, limit); if (sorted.length === 0) { document.getElementById(id).innerHTML = '<div class="empty-state">No donations yet</div>'; return; } document.getElementById(id).innerHTML = sorted.map(function(item, i) { return '<div class="leaderboard-item"><div class="lb-rank ' + (i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '') + '">' + (i + 1) + '</div><div class="lb-name">' + item[0] + '</div><div class="lb-amount">' + fmt(item[1]) + '</div></div>'; }).join(''); }
 
 // ===== DONATIONS =====
 function renderDonations() {
-  if (donations.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">No donations yet</div></td></tr></tbody>'; }
-  else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + donations.map(function(d) { return '<tr><td><strong>' + d.donor_name + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(d.amount) + '</td><td class="date">' + fmtDate(d.date) + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (d.logged_by || '\u2014') + '</td><td style="color:var(--text-muted)">' + (d.notes || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
+  if (donations.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">No donations yet</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + donations.map(function(d) { return '<tr><td><strong>' + d.donor_name + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(d.amount) + '</td><td class="date">' + fmtDate(d.date) + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (d.logged_by || '\u2014') + '</td><td style="color:var(--text-muted)">' + (d.notes || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
   renderLeaderboard('donations-leaderboard');
 }
 document.getElementById('don-date').value = todayStr();
-document.getElementById('donation-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var result = await sb.from('donations').insert({ donor_name: document.getElementById('don-name').value.trim(), amount: parseFloat(document.getElementById('don-amount').value), date: document.getElementById('don-date').value, logged_by: document.getElementById('don-logged-by').value || null, notes: document.getElementById('don-notes').value.trim() || null });
-  if (result.error) { toast('Failed to add donation', 'error'); return; }
-  toast('Donation added!'); document.getElementById('donation-form').reset(); document.getElementById('don-date').value = todayStr(); await loadAll();
-});
+document.getElementById('donation-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('donations').insert({ donor_name: document.getElementById('don-name').value.trim(), amount: parseFloat(document.getElementById('don-amount').value), date: document.getElementById('don-date').value, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('don-notes').value.trim() || null }); if (result.error) { toast('Failed to add donation', 'error'); return; } toast('Donation added!'); document.getElementById('donation-form').reset(); document.getElementById('don-date').value = todayStr(); await loadAll(); });
 async function deleteDonation(id) { var d = donations.find(function(x) { return x.id === id; }); openConfirm('Delete donation from <strong>' + d.donor_name + '</strong> (' + fmt(d.amount) + ')?', async function() { await sb.from('donations').delete().eq('id', id); toast('Donation deleted'); await loadAll(); }); }
-async function editDonation(id) {
-  var d = donations.find(function(x) { return x.id === id; });
-  var logOpts = '<option value="">--</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '" ' + (m.name === d.logged_by ? 'selected' : '') + '>' + m.name + '</option>'; }).join('');
-  openModal('Edit Donation', '<div class="form-row"><div class="form-group"><label>Donor Name</label><input type="text" id="edit-don-name" value="' + d.donor_name + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-don-amount" step="0.01" value="' + d.amount + '"/></div><div class="form-group"><label>Logged By</label><select id="edit-don-log">' + logOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="edit-don-date" value="' + d.date + '"/></div><div class="form-group" style="grid-column:span 2"><label>Notes</label><input type="text" id="edit-don-notes" value="' + (d.notes || '') + '"/></div></div>', async function() { await sb.from('donations').update({ donor_name: document.getElementById('edit-don-name').value.trim(), amount: parseFloat(document.getElementById('edit-don-amount').value), date: document.getElementById('edit-don-date').value, logged_by: document.getElementById('edit-don-log').value || null, notes: document.getElementById('edit-don-notes').value.trim() || null }).eq('id', id); toast('Donation updated!'); closeModal(); await loadAll(); });
-}
+async function editDonation(id) { var d = donations.find(function(x) { return x.id === id; }); openModal('Edit Donation', '<div class="form-row"><div class="form-group"><label>Donor Name</label><input type="text" id="edit-don-name" value="' + d.donor_name + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-don-amount" step="0.01" value="' + d.amount + '"/></div><div class="form-group"><label>Date</label><input type="date" id="edit-don-date" value="' + d.date + '"/></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-don-notes" value="' + (d.notes || '') + '"/></div></div>', async function() { await sb.from('donations').update({ donor_name: document.getElementById('edit-don-name').value.trim(), amount: parseFloat(document.getElementById('edit-don-amount').value), date: document.getElementById('edit-don-date').value, notes: document.getElementById('edit-don-notes').value.trim() || null }).eq('id', id); toast('Donation updated!'); closeModal(); await loadAll(); }); }
 
 // ===== EXPENSES =====
 function renderCategorySelect() { document.getElementById('exp-category').innerHTML = categories.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join(''); }
 function renderExpenses() {
-  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="7"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; }
-  else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) { return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring ? '<span style="color:var(--amber)">Monthly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
+  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="7"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) { return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring ? '<span style="color:var(--amber)">Monthly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
 }
 document.getElementById('exp-date').value = todayStr();
-document.getElementById('expense-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value === 'true', logged_by: document.getElementById('exp-logged-by').value || null, notes: document.getElementById('exp-notes').value.trim() || null });
-  if (result.error) { toast('Failed to add expense', 'error'); return; }
-  toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll();
-});
+document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value === 'true', logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
 async function deleteExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); openConfirm('Delete expense <strong>' + e.description + '</strong> (' + fmt(e.amount) + ')?', async function() { await sb.from('expenses').delete().eq('id', id); toast('Expense deleted'); await loadAll(); }); }
-async function editExpense(id) {
-  var e = expenses.find(function(x) { return x.id === id; });
-  var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join('');
-  var logOpts = '<option value="">--</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '" ' + (m.name === e.logged_by ? 'selected' : '') + '>' + m.name + '</option>'; }).join('');
-  openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="false" ' + (!e.recurring ? 'selected' : '') + '>No</option><option value="true" ' + (e.recurring ? 'selected' : '') + '>Yes</option></select></div><div class="form-group"><label>Logged By</label><select id="edit-exp-log">' + logOpts + '</select></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value === 'true', logged_by: document.getElementById('edit-exp-log').value || null, notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); });
-}
+async function editExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join(''); openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="false" ' + (!e.recurring ? 'selected' : '') + '>No</option><option value="true" ' + (e.recurring ? 'selected' : '') + '>Yes</option></select></div><div class="form-group"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value === 'true', notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); }); }
 
 // ===== REPORTS =====
 function renderReports() {
-  var totalDon = donations.reduce(function(s, d) { return s + Number(d.amount); }, 0);
-  var totalExp = expenses.reduce(function(s, e) { return s + Number(e.amount); }, 0);
-  var balance = totalDon - totalExp;
-  var monthsDon = {}; donations.forEach(function(d) { var k = getMonthKey(d.date); monthsDon[k] = (monthsDon[k] || 0) + Number(d.amount); });
-  var monthsExp = {}; expenses.forEach(function(e) { var k = getMonthKey(e.date); monthsExp[k] = (monthsExp[k] || 0) + Number(e.amount); });
-  var avgDon = Object.keys(monthsDon).length > 0 ? totalDon / Object.keys(monthsDon).length : 0;
-  var avgExp = Object.keys(monthsExp).length > 0 ? totalExp / Object.keys(monthsExp).length : 0;
+  var totalDon = donations.reduce(function(s, d) { return s + Number(d.amount); }, 0); var totalExp = expenses.reduce(function(s, e) { return s + Number(e.amount); }, 0); var balance = totalDon - totalExp;
+  var monthsDon = {}; donations.forEach(function(d) { var k = getMonthKey(d.date); monthsDon[k] = (monthsDon[k] || 0) + Number(d.amount); }); var monthsExp = {}; expenses.forEach(function(e) { var k = getMonthKey(e.date); monthsExp[k] = (monthsExp[k] || 0) + Number(e.amount); });
+  var avgDon = Object.keys(monthsDon).length > 0 ? totalDon / Object.keys(monthsDon).length : 0; var avgExp = Object.keys(monthsExp).length > 0 ? totalExp / Object.keys(monthsExp).length : 0;
   var monthlyRec = expenses.filter(function(e) { return e.recurring; }).reduce(function(s, e) { return s + Number(e.amount); }, 0);
   document.getElementById('report-stats').innerHTML = '<div class="stat-card"><div class="stat-label">Avg Monthly Donations</div><div class="stat-value green">' + fmt(avgDon) + '</div></div><div class="stat-card"><div class="stat-label">Avg Monthly Expenses</div><div class="stat-value red">' + fmt(avgExp) + '</div></div><div class="stat-card"><div class="stat-label">Monthly Recurring</div><div class="stat-value amber">' + fmt(monthlyRec) + '</div></div><div class="stat-card"><div class="stat-label">Months Runway</div><div class="stat-value blue">' + (monthlyRec > 0 && balance > 0 ? (balance / monthlyRec).toFixed(1) : '\u2014') + '</div><div class="stat-sub">' + (monthlyRec > 0 && balance > 0 ? 'at current costs' : 'set recurring expenses') + '</div></div>';
-  var allM = {};
-  donations.forEach(function(d) { var k = getMonthKey(d.date); if (!allM[k]) allM[k] = { don: 0, exp: 0 }; allM[k].don += Number(d.amount); });
-  expenses.forEach(function(e) { var k = getMonthKey(e.date); if (!allM[k]) allM[k] = { don: 0, exp: 0 }; allM[k].exp += Number(e.amount); });
-  var sortedM = Object.keys(allM).sort().slice(-12);
-  var barCtx = document.getElementById('report-bar-chart'); if (reportBarChart) reportBarChart.destroy();
-  reportBarChart = new Chart(barCtx, { type: 'bar', data: { labels: sortedM.map(getMonthLabel), datasets: [{ label: 'Donations', data: sortedM.map(function(k) { return allM[k].don; }), backgroundColor: 'rgba(62,207,142,0.7)', borderRadius: 4 }, { label: 'Expenses', data: sortedM.map(function(k) { return allM[k].exp; }), backgroundColor: 'rgba(247,95,95,0.7)', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12 } } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: function(v) { return v + '\u20AC'; } } } } } });
-  var catTotals = {}; expenses.forEach(function(e) { var n = e.expense_categories ? e.expense_categories.name : 'Other'; catTotals[n] = (catTotals[n] || 0) + Number(e.amount); });
-  var pieCtx = document.getElementById('report-pie-chart'); if (reportPieChart) reportPieChart.destroy();
-  reportPieChart = new Chart(pieCtx, { type: 'doughnut', data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3ECF8E','#3b82f6','#f0b429','#f75f5f','#8b5cf6','#ec4899','#06b6d4'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } } }, cutout: '60%' } });
+  var allM = {}; donations.forEach(function(d) { var k = getMonthKey(d.date); if (!allM[k]) allM[k] = { don: 0, exp: 0 }; allM[k].don += Number(d.amount); }); expenses.forEach(function(e) { var k = getMonthKey(e.date); if (!allM[k]) allM[k] = { don: 0, exp: 0 }; allM[k].exp += Number(e.amount); }); var sortedM = Object.keys(allM).sort().slice(-12);
+  var barCtx = document.getElementById('report-bar-chart'); if (reportBarChart) reportBarChart.destroy(); reportBarChart = new Chart(barCtx, { type: 'bar', data: { labels: sortedM.map(getMonthLabel), datasets: [{ label: 'Donations', data: sortedM.map(function(k) { return allM[k].don; }), backgroundColor: 'rgba(62,207,142,0.7)', borderRadius: 4 }, { label: 'Expenses', data: sortedM.map(function(k) { return allM[k].exp; }), backgroundColor: 'rgba(247,95,95,0.7)', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12 } } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: function(v) { return v + '\u20AC'; } } } } } });
+  var catTotals = {}; expenses.forEach(function(e) { var n = e.expense_categories ? e.expense_categories.name : 'Other'; catTotals[n] = (catTotals[n] || 0) + Number(e.amount); }); var pieCtx = document.getElementById('report-pie-chart'); if (reportPieChart) reportPieChart.destroy(); reportPieChart = new Chart(pieCtx, { type: 'doughnut', data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3ECF8E','#3b82f6','#f0b429','#f75f5f','#8b5cf6','#ec4899','#06b6d4'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } } }, cutout: '60%' } });
   document.getElementById('report-monthly-table').innerHTML = '<thead><tr><th>Month</th><th>Donations</th><th>Expenses</th><th>Net</th></tr></thead><tbody>' + sortedM.slice().reverse().map(function(k) { var net = allM[k].don - allM[k].exp; return '<tr><td><strong>' + getMonthLabel(k) + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(allM[k].don) + '</td><td class="amount" style="color:var(--red)">-' + fmt(allM[k].exp) + '</td><td class="amount" style="color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (net >= 0 ? '+' : '') + fmt(net) + '</td></tr>'; }).join('') + '</tbody>';
 }
 
@@ -500,7 +470,8 @@ function closeConfirm() { document.getElementById('confirm-modal').classList.rem
 document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeModal(); });
 document.getElementById('confirm-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeConfirm(); });
 
-loadAll();
+// ===== INIT =====
+checkExistingUser();
 </script>
 </body>
 </html>
