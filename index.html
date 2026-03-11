@@ -97,14 +97,14 @@
     .form-group input,.form-group select{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none;transition:border-color .15s}
     .form-group input:focus,.form-group select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow)}
     input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(69%) sepia(52%) saturate(501%) hue-rotate(107deg) brightness(92%) contrast(89%);cursor:pointer}
-    .data-table{width:100%;border-collapse:collapse}
+    .data-table{width:100%;border-collapse:collapse;border-spacing:0}
     .data-table th{text-align:left;font-size:.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;padding:.55rem .65rem;border-bottom:1px solid var(--border)}
     .data-table td{padding:.55rem .65rem;border-bottom:1px solid var(--border-light);font-size:.83rem;vertical-align:middle}
     .data-table tr:hover td{background:rgba(62,207,142,.02)}
     .data-table .amount{font-family:JetBrains Mono,monospace;font-weight:600;font-size:.85rem}
     .data-table .date{color:var(--text-muted);font-size:.78rem}
-    .data-table .actions{display:inline-flex;gap:.2rem;white-space:nowrap;align-items:center}
-    .data-table .actions .btn{border:none}
+    .data-table td.actions{white-space:nowrap}
+    .data-table td.actions .btn{border:none}
     .leaderboard-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .4rem;border-radius:6px;transition:background .15s}
     .leaderboard-item:hover{background:rgba(255,255,255,.02)}
     .lb-rank{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.8rem;width:1.6rem;height:1.6rem;display:flex;align-items:center;justify-content:center;border-radius:4px;background:var(--bg-secondary);color:var(--text-muted)}
