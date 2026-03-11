@@ -251,7 +251,10 @@
           <div class="panel"><div class="panel-header"><div class="panel-title">Donations vs Expenses</div></div><div class="chart-container"><canvas id="report-bar-chart"></canvas></div></div>
           <div class="panel"><div class="panel-header"><div class="panel-title">Expense Categories</div></div><div class="chart-container"><canvas id="report-pie-chart"></canvas></div></div>
         </div>
-        <div class="panel"><div class="panel-header"><div class="panel-title">Monthly Breakdown</div></div><div class="table-scroll"><table class="data-table" id="report-monthly-table"></table></div></div>
+        <div class="two-col">
+          <div class="panel"><div class="panel-header"><div class="panel-title">Monthly Breakdown</div></div><div class="table-scroll"><table class="data-table" id="report-monthly-table"></table></div></div>
+          <div class="panel"><div class="panel-header"><div class="panel-title">Expenses by Member</div></div><div id="report-expenses-by-member"></div></div>
+        </div>
       </section>
     </div>
 
@@ -487,6 +490,11 @@ function renderReports() {
   var barCtx = document.getElementById('report-bar-chart'); if (reportBarChart) reportBarChart.destroy(); reportBarChart = new Chart(barCtx, { type: 'bar', data: { labels: sortedM.map(getMonthLabel), datasets: [{ label: 'Donations', data: sortedM.map(function(k) { return allM[k].don; }), backgroundColor: 'rgba(62,207,142,0.7)', borderRadius: 4 }, { label: 'Expenses', data: sortedM.map(function(k) { return allM[k].exp; }), backgroundColor: 'rgba(247,95,95,0.7)', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12 } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: function(v) { return v + '\u20AC'; } } } } } });
   var catTotals = {}; expenses.forEach(function(e) { var n = e.expense_categories ? e.expense_categories.name : 'Other'; catTotals[n] = (catTotals[n] || 0) + Number(e.amount); }); var pieCtx = document.getElementById('report-pie-chart'); if (reportPieChart) reportPieChart.destroy(); reportPieChart = new Chart(pieCtx, { type: 'doughnut', data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3ECF8E','#3b82f6','#f0b429','#f75f5f','#8b5cf6','#ec4899','#06b6d4'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } } }, cutout: '60%' } });
   document.getElementById('report-monthly-table').innerHTML = '<thead><tr><th>Month</th><th>Donations</th><th>Expenses</th><th>Net</th></tr></thead><tbody>' + sortedM.slice().reverse().map(function(k) { var net = allM[k].don - allM[k].exp; return '<tr><td><strong>' + getMonthLabel(k) + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(allM[k].don) + '</td><td class="amount" style="color:var(--red)">-' + fmt(allM[k].exp) + '</td><td class="amount" style="color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (net >= 0 ? '+' : '') + fmt(net) + '</td></tr>'; }).join('') + '</tbody>';
+  // Expenses by member
+  var byMember = {}; expenses.forEach(function(e) { if (!e.paid_by) return; byMember[e.paid_by] = byMember[e.paid_by] || { total: 0, count: 0 }; byMember[e.paid_by].total += Number(e.amount); byMember[e.paid_by].count++; });
+  var memberSorted = Object.entries(byMember).sort(function(a, b) { return b[1].total - a[1].total; });
+  if (memberSorted.length === 0) { document.getElementById('report-expenses-by-member').innerHTML = '<div class="empty-state">No expenses with "Paid By" set yet</div>'; }
+  else { document.getElementById('report-expenses-by-member').innerHTML = memberSorted.map(function(item, i) { var color = hashColor(item[0]); return '<div class="leaderboard-item"><div class="team-avatar" style="background:' + color + ';width:28px;height:28px;font-size:.65rem">' + getInitials(item[0]) + '</div><div class="lb-name">' + item[0] + '<div style="font-size:.7rem;color:var(--text-muted)">' + item[1].count + ' expense' + (item[1].count > 1 ? 's' : '') + '</div></div><div class="lb-amount" style="color:var(--red)">' + fmt(item[1].total) + '</div></div>'; }).join(''); }
 }
 
 // ===== MODALS =====
