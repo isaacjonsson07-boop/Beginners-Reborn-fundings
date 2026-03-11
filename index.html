@@ -121,6 +121,18 @@
     .team-role.owner{color:var(--red)}.team-role.admin{color:var(--amber)}.team-role.mod{color:var(--blue)}.team-role.member{color:var(--text-muted)}
     .right-panel-header{font-family:JetBrains Mono,monospace;font-size:.85rem;font-weight:600;color:var(--text-primary);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
     .member-count{font-family:JetBrains Mono,monospace;font-size:.7rem;color:var(--text-muted);font-weight:400}
+    .profile-header{display:flex;flex-direction:column;align-items:center;padding-bottom:1rem;border-bottom:1px solid var(--border-light);margin-bottom:1rem}
+    .profile-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem;color:#000;margin-bottom:.75rem;position:relative}
+    .profile-avatar .status-dot{width:14px;height:14px;border:3px solid var(--bg-card);bottom:0;right:0}
+    .profile-name{font-family:JetBrains Mono,monospace;font-size:1.1rem;font-weight:700;margin-bottom:.2rem}
+    .profile-role-badge{font-size:.7rem;font-weight:600;padding:.2rem .6rem;border-radius:4px;text-transform:uppercase;letter-spacing:1px}
+    .profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+    .profile-stat{background:var(--bg-input);border:1px solid var(--border-light);border-radius:8px;padding:.6rem .75rem;text-align:center}
+    .profile-stat-value{font-family:JetBrains Mono,monospace;font-size:1.1rem;font-weight:700}
+    .profile-stat-label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:.15rem}
+    .profile-activity{font-size:.8rem}
+    .profile-activity-item{display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid var(--border-light)}
+    .profile-activity-item:last-child{border-bottom:none}
     .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
     .toast{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.85rem;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:slideIn .3s ease;display:flex;align-items:center;gap:.5rem}
     .toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}
@@ -265,6 +277,7 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="profile-modal"><div class="modal" style="max-width:400px"><div id="profile-card-content"></div><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeProfile()">Close</button></div></div></div>
 <div class="modal-overlay" id="edit-modal"><div class="modal"><div class="modal-title" id="modal-title">Edit</div><form id="modal-form"></form><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button><button type="button" class="btn btn-primary" id="modal-save">Save</button></div></div></div>
 <div class="modal-overlay" id="confirm-modal"><div class="modal"><div class="modal-title">Confirm Delete</div><p style="color:var(--text-secondary);margin-bottom:.5rem" id="confirm-text">Are you sure?</p><div class="modal-actions"><button type="button" class="btn btn-ghost" onclick="closeConfirm()">Cancel</button><button type="button" class="btn btn-danger" id="confirm-yes" style="border:1px solid var(--red)">Delete</button></div></div></div>
 <div class="toast-container" id="toasts"></div>
@@ -389,7 +402,7 @@ function renderTeamPanel() {
     grouped[role].forEach(function(m) {
       var color = hashColor(m.name); var statusClass = 'status-' + (m.status || 'offline');
       var isYou = currentUser && m.id === currentUser.id;
-      html += '<div class="team-member"><div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div><div class="team-info"><div class="team-name">' + m.name + (isYou ? ' <span style="color:var(--green);font-size:.7rem">(you)</span>' : '') + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + m.role + '</div></div></div>';
+      html += '<div class="team-member" onclick="openProfile(\'' + m.id + '\')" style="cursor:pointer"><div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div><div class="team-info"><div class="team-name">' + m.name + (isYou ? ' <span style="color:var(--green);font-size:.7rem">(you)</span>' : '') + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + m.role + '</div></div></div>';
     });
   });
   if (total === 0) html = '<div class="empty-state">No team members yet</div>';
@@ -400,7 +413,7 @@ function renderTeamPanel() {
 function renderTeamPage() {
   if (teamMembers.length === 0) { document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="4"><div class="empty-state">No team members yet</div></td></tr></tbody>'; return; }
   document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + teamMembers.map(function(m) {
-    return '<tr><td><strong>' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
+    return '<tr><td><strong style="cursor:pointer" onclick="openProfile(\'' + m.id + '\')">' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
   }).join('') + '</tbody>';
 }
 
@@ -496,6 +509,65 @@ function renderReports() {
   if (memberSorted.length === 0) { document.getElementById('report-expenses-by-member').innerHTML = '<div class="empty-state">No expenses with "Paid By" set yet</div>'; }
   else { document.getElementById('report-expenses-by-member').innerHTML = memberSorted.map(function(item, i) { var color = hashColor(item[0]); return '<div class="leaderboard-item"><div class="team-avatar" style="background:' + color + ';width:28px;height:28px;font-size:.65rem">' + getInitials(item[0]) + '</div><div class="lb-name">' + item[0] + '<div style="font-size:.7rem;color:var(--text-muted)">' + item[1].count + ' expense' + (item[1].count > 1 ? 's' : '') + '</div></div><div class="lb-amount" style="color:var(--red)">' + fmt(item[1].total) + '</div></div>'; }).join(''); }
 }
+
+// ===== PROFILE CARD =====
+function openProfile(id) {
+  var m = teamMembers.find(function(x) { return x.id === id; });
+  if (!m) return;
+  var color = hashColor(m.name);
+  var statusClass = 'status-' + (m.status || 'offline');
+  var roleBg = { Owner: 'rgba(247,95,95,.15)', Admin: 'rgba(240,180,41,.15)', Mod: 'rgba(59,130,246,.15)', Member: 'rgba(102,102,102,.15)' };
+  var roleCol = { Owner: '#f75f5f', Admin: '#f0b429', Mod: '#3b82f6', Member: '#888' };
+
+  // Donations logged by this member
+  var donLogged = donations.filter(function(d) { return d.logged_by === m.name; });
+  var donLoggedTotal = donLogged.reduce(function(s, d) { return s + Number(d.amount); }, 0);
+
+  // Expenses paid by this member
+  var expPaid = expenses.filter(function(e) { return e.paid_by === m.name; });
+  var expPaidTotal = expPaid.reduce(function(s, e) { return s + Number(e.amount); }, 0);
+
+  // Expenses logged by this member
+  var expLogged = expenses.filter(function(e) { return e.logged_by === m.name; });
+
+  // Recent activity (last 5)
+  var activity = [];
+  donLogged.forEach(function(d) { activity.push({ text: 'Logged donation from ' + d.donor_name, amount: '+' + fmt(d.amount), color: 'var(--green)', date: d.date }); });
+  expPaid.forEach(function(e) { activity.push({ text: 'Paid: ' + e.description, amount: '-' + fmt(e.amount), color: 'var(--red)', date: e.date }); });
+  activity.sort(function(a, b) { return b.date.localeCompare(a.date); });
+  activity = activity.slice(0, 5);
+
+  var html = '<div class="profile-header">' +
+    '<div class="profile-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '" style="position:absolute"></div></div>' +
+    '<div class="profile-name">' + m.name + '</div>' +
+    '<div class="profile-role-badge" style="background:' + (roleBg[m.role] || roleBg.Member) + ';color:' + (roleCol[m.role] || roleCol.Member) + '">' + m.role + '</div>' +
+    '</div>';
+
+  html += '<div class="profile-stats">' +
+    '<div class="profile-stat"><div class="profile-stat-value green">' + donLogged.length + '</div><div class="profile-stat-label">Donations Logged</div></div>' +
+    '<div class="profile-stat"><div class="profile-stat-value green">' + fmt(donLoggedTotal) + '</div><div class="profile-stat-label">Total Logged</div></div>' +
+    '<div class="profile-stat"><div class="profile-stat-value red">' + expPaid.length + '</div><div class="profile-stat-label">Expenses Paid</div></div>' +
+    '<div class="profile-stat"><div class="profile-stat-value red">' + fmt(expPaidTotal) + '</div><div class="profile-stat-label">Total Paid</div></div>' +
+    '</div>';
+
+  html += '<div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.4rem">Joined ' + fmtDate(m.joined_at) + '</div>';
+
+  if (activity.length > 0) {
+    html += '<div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:.75rem;margin-bottom:.4rem">Recent Activity</div>';
+    html += '<div class="profile-activity">';
+    activity.forEach(function(a) {
+      html += '<div class="profile-activity-item"><span style="color:var(--text-secondary)">' + a.text + '</span><span style="font-family:JetBrains Mono,monospace;font-weight:600;color:' + a.color + '">' + a.amount + '</span></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="color:var(--text-muted);font-size:.8rem;margin-top:.75rem;text-align:center">No activity yet</div>';
+  }
+
+  document.getElementById('profile-card-content').innerHTML = html;
+  document.getElementById('profile-modal').classList.add('open');
+}
+function closeProfile() { document.getElementById('profile-modal').classList.remove('open'); }
+document.getElementById('profile-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeProfile(); });
 
 // ===== MODALS =====
 var modalSaveHandler = null;
