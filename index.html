@@ -214,7 +214,7 @@
 
       <section class="page" id="page-donations">
         <div class="page-title">Donations</div>
-        <div class="panel">
+        <div class="panel" id="panel-add-donation">
           <div class="panel-header"><div class="panel-title">Add Donation</div></div>
           <form id="donation-form">
             <div class="form-row">
@@ -234,7 +234,7 @@
 
       <section class="page" id="page-expenses">
         <div class="page-title">Expenses</div>
-        <div class="panel">
+        <div class="panel" id="panel-add-expense">
           <div class="panel-header"><div class="panel-title">Add Expense</div></div>
           <form id="expense-form">
             <div class="form-row">
@@ -252,7 +252,7 @@
           </form>
         </div>
         <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div><div class="table-scroll"><table class="data-table" id="expenses-table"></table></div></div>
-        <div class="panel">
+        <div class="panel" id="panel-categories">
           <div class="panel-header"><div class="panel-title">Manage Categories</div></div>
           <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
             <input type="text" id="cat-new-name" placeholder="New category name" style="flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none" />
@@ -369,6 +369,19 @@ function signOut() {
   document.getElementById('ob-submit').textContent = 'Join Team';
 }
 
+// ===== PERMISSIONS =====
+function canAdd() { return currentUser && (currentUser.role === 'Owner' || currentUser.role === 'Admin' || currentUser.role === 'Mod'); }
+function canEditEntry(entry) {
+  if (!currentUser) return false;
+  if (currentUser.role === 'Owner' || currentUser.role === 'Admin') return true;
+  if (currentUser.role === 'Mod') return entry.logged_by === currentUser.name;
+  return false;
+}
+function canDeleteEntry() { return currentUser && (currentUser.role === 'Owner' || currentUser.role === 'Admin'); }
+function canDeleteMember() { return currentUser && currentUser.role === 'Owner'; }
+function canEditMember() { return currentUser && (currentUser.role === 'Owner' || currentUser.role === 'Admin'); }
+function canManageCategories() { return currentUser && (currentUser.role === 'Owner' || currentUser.role === 'Admin'); }
+
 function renderSidebarUser() {
   if (!currentUser) return;
   var color = hashColor(currentUser.name);
@@ -404,7 +417,14 @@ async function loadAll() {
   donations = results[0].data || []; expenses = results[1].data || []; categories = results[2].data || []; teamMembers = results[3].data || [];
   renderAll();
 }
-function renderAll() { renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderPaidBySelect(); renderCategoriesList(); renderTeamPanel(); renderTeamPage(); }
+function renderAll() { renderPermissions(); renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderPaidBySelect(); renderCategoriesList(); renderTeamPanel(); renderTeamPage(); }
+
+function renderPermissions() {
+  var addPanel = canAdd();
+  document.getElementById('panel-add-donation').style.display = addPanel ? '' : 'none';
+  document.getElementById('panel-add-expense').style.display = addPanel ? '' : 'none';
+  document.getElementById('panel-categories').style.display = canManageCategories() ? '' : 'none';
+}
 
 // ===== RIGHT PANEL =====
 function renderTeamPanel() {
@@ -430,12 +450,17 @@ function renderTeamPanel() {
 function renderTeamPage() {
   if (teamMembers.length === 0) { document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="4"><div class="empty-state">No team members yet</div></td></tr></tbody>'; return; }
   document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + teamMembers.map(function(m) {
-    return '<tr><td><strong style="cursor:pointer" onclick="openProfile(\'' + m.id + '\')">' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
+    var actions = '';
+    if (canEditMember()) actions += '<button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button>';
+    if (canDeleteMember() && m.id !== (currentUser ? currentUser.id : '')) actions += '<button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button>';
+    if (!actions) actions = '<span style="color:var(--text-muted);font-size:.7rem">View only</span>';
+    return '<tr><td><strong style="cursor:pointer" onclick="openProfile(\'' + m.id + '\')">' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions">' + actions + '</td></tr>';
   }).join('') + '</tbody>';
 }
 
-async function deleteMember(id) { var m = teamMembers.find(function(x) { return x.id === id; }); openConfirm('Remove <strong>' + m.name + '</strong> from the team?', async function() { await sb.from('team_members').delete().eq('id', id); toast('Member removed'); await loadAll(); }); }
+async function deleteMember(id) { if (!canDeleteMember()) { toast('No permission', 'error'); return; } var m = teamMembers.find(function(x) { return x.id === id; }); openConfirm('Remove <strong>' + m.name + '</strong> from the team?', async function() { await sb.from('team_members').delete().eq('id', id); toast('Member removed'); await loadAll(); }); }
 async function editMember(id) {
+  if (!canEditMember()) { toast('No permission', 'error'); return; }
   var m = teamMembers.find(function(x) { return x.id === id; });
   var roleOpts = ['Owner','Admin','Mod','Member'].map(function(r) { return '<option value="' + r + '" ' + (r === m.role ? 'selected' : '') + '>' + r + '</option>'; }).join('');
   var statusOpts = ['online','idle','offline'].map(function(s) { return '<option value="' + s + '" ' + (s === m.status ? 'selected' : '') + '>' + s + '</option>'; }).join('');
@@ -461,13 +486,19 @@ function renderLeaderboard(id, limit) { var grouped = {}; donations.forEach(func
 
 // ===== DONATIONS =====
 function renderDonations() {
-  if (donations.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">No donations yet</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + donations.map(function(d) { return '<tr><td><strong>' + d.donor_name + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(d.amount) + '</td><td class="date">' + fmtDate(d.date) + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (d.logged_by || '\u2014') + '</td><td style="color:var(--text-muted)">' + (d.notes || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
+  if (donations.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">No donations yet</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + donations.map(function(d) {
+    var actions = '';
+    if (canEditEntry(d)) actions += '<button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button>';
+    if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button>';
+    if (!actions) actions = '<span style="color:var(--text-muted);font-size:.7rem">View only</span>';
+    return '<tr><td><strong>' + d.donor_name + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(d.amount) + '</td><td class="date">' + fmtDate(d.date) + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (d.logged_by || '\u2014') + '</td><td style="color:var(--text-muted)">' + (d.notes || '\u2014') + '</td><td class="actions">' + actions + '</td></tr>';
+  }).join('') + '</tbody>'; }
   renderLeaderboard('donations-leaderboard');
 }
 document.getElementById('don-date').value = todayStr();
-document.getElementById('donation-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('donations').insert({ donor_name: document.getElementById('don-name').value.trim(), amount: parseFloat(document.getElementById('don-amount').value), date: document.getElementById('don-date').value, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('don-notes').value.trim() || null }); if (result.error) { toast('Failed to add donation', 'error'); return; } toast('Donation added!'); document.getElementById('donation-form').reset(); document.getElementById('don-date').value = todayStr(); await loadAll(); });
-async function deleteDonation(id) { var d = donations.find(function(x) { return x.id === id; }); openConfirm('Delete donation from <strong>' + d.donor_name + '</strong> (' + fmt(d.amount) + ')?', async function() { await sb.from('donations').delete().eq('id', id); toast('Donation deleted'); await loadAll(); }); }
-async function editDonation(id) { var d = donations.find(function(x) { return x.id === id; }); openModal('Edit Donation', '<div class="form-row"><div class="form-group"><label>Donor Name</label><input type="text" id="edit-don-name" value="' + d.donor_name + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-don-amount" step="0.01" value="' + d.amount + '"/></div><div class="form-group"><label>Date</label><input type="date" id="edit-don-date" value="' + d.date + '"/></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-don-notes" value="' + (d.notes || '') + '"/></div></div>', async function() { await sb.from('donations').update({ donor_name: document.getElementById('edit-don-name').value.trim(), amount: parseFloat(document.getElementById('edit-don-amount').value), date: document.getElementById('edit-don-date').value, notes: document.getElementById('edit-don-notes').value.trim() || null }).eq('id', id); toast('Donation updated!'); closeModal(); await loadAll(); }); }
+document.getElementById('donation-form').addEventListener('submit', async function(e) { e.preventDefault(); if (!canAdd()) { toast('No permission', 'error'); return; } var result = await sb.from('donations').insert({ donor_name: document.getElementById('don-name').value.trim(), amount: parseFloat(document.getElementById('don-amount').value), date: document.getElementById('don-date').value, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('don-notes').value.trim() || null }); if (result.error) { toast('Failed to add donation', 'error'); return; } toast('Donation added!'); document.getElementById('donation-form').reset(); document.getElementById('don-date').value = todayStr(); await loadAll(); });
+async function deleteDonation(id) { if (!canDeleteEntry()) { toast('No permission', 'error'); return; } var d = donations.find(function(x) { return x.id === id; }); openConfirm('Delete donation from <strong>' + d.donor_name + '</strong> (' + fmt(d.amount) + ')?', async function() { await sb.from('donations').delete().eq('id', id); toast('Donation deleted'); await loadAll(); }); }
+async function editDonation(id) { var d = donations.find(function(x) { return x.id === id; }); if (!canEditEntry(d)) { toast('No permission', 'error'); return; } openModal('Edit Donation', '<div class="form-row"><div class="form-group"><label>Donor Name</label><input type="text" id="edit-don-name" value="' + d.donor_name + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-don-amount" step="0.01" value="' + d.amount + '"/></div><div class="form-group"><label>Date</label><input type="date" id="edit-don-date" value="' + d.date + '"/></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-don-notes" value="' + (d.notes || '') + '"/></div></div>', async function() { await sb.from('donations').update({ donor_name: document.getElementById('edit-don-name').value.trim(), amount: parseFloat(document.getElementById('edit-don-amount').value), date: document.getElementById('edit-don-date').value, notes: document.getElementById('edit-don-notes').value.trim() || null }).eq('id', id); toast('Donation updated!'); closeModal(); await loadAll(); }); }
 
 // ===== EXPENSES =====
 function renderCategorySelect() { document.getElementById('exp-category').innerHTML = categories.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join(''); }
@@ -479,6 +510,7 @@ function renderCategoriesList() {
   }).join('');
 }
 async function addCategory() {
+  if (!canManageCategories()) { toast('No permission', 'error'); return; }
   var name = document.getElementById('cat-new-name').value.trim();
   if (!name) return;
   var result = await sb.from('expense_categories').insert({ name: name });
@@ -502,12 +534,18 @@ async function deleteCategory(id) {
   });
 }
 function renderExpenses() {
-  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) { return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring === 'monthly' ? '<span style="color:var(--amber)">Monthly</span>' : e.recurring === 'yearly' ? '<span style="color:var(--purple)">Yearly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.paid_by || '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
+  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) {
+    var actions = '';
+    if (canEditEntry(e)) actions += '<button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button>';
+    if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button>';
+    if (!actions) actions = '<span style="color:var(--text-muted);font-size:.7rem">View only</span>';
+    return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring === 'monthly' ? '<span style="color:var(--amber)">Monthly</span>' : e.recurring === 'yearly' ? '<span style="color:var(--purple)">Yearly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.paid_by || '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions">' + actions + '</td></tr>';
+  }).join('') + '</tbody>'; }
 }
 document.getElementById('exp-date').value = todayStr();
-document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value, paid_by: document.getElementById('exp-paid-by').value || null, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
-async function deleteExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); openConfirm('Delete expense <strong>' + e.description + '</strong> (' + fmt(e.amount) + ')?', async function() { await sb.from('expenses').delete().eq('id', id); toast('Expense deleted'); await loadAll(); }); }
-async function editExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join(''); var paidOpts = '<option value="">--</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '" ' + (m.name === e.paid_by ? 'selected' : '') + '>' + m.name + '</option>'; }).join(''); openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div></div><div class="form-row"><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div></div><div class="form-row"><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="no" ' + (e.recurring === 'no' || !e.recurring ? 'selected' : '') + '>No</option><option value="monthly" ' + (e.recurring === 'monthly' ? 'selected' : '') + '>Monthly</option><option value="yearly" ' + (e.recurring === 'yearly' ? 'selected' : '') + '>Yearly</option></select></div><div class="form-group"><label>Paid By</label><select id="edit-exp-paid">' + paidOpts + '</select></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value, paid_by: document.getElementById('edit-exp-paid').value || null, notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); }); }
+document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); if (!canAdd()) { toast('No permission', 'error'); return; } var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value, paid_by: document.getElementById('exp-paid-by').value || null, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
+async function deleteExpense(id) { if (!canDeleteEntry()) { toast('No permission', 'error'); return; } var e = expenses.find(function(x) { return x.id === id; }); openConfirm('Delete expense <strong>' + e.description + '</strong> (' + fmt(e.amount) + ')?', async function() { await sb.from('expenses').delete().eq('id', id); toast('Expense deleted'); await loadAll(); }); }
+async function editExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); if (!canEditEntry(e)) { toast('No permission', 'error'); return; } var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join(''); var paidOpts = '<option value="">--</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '" ' + (m.name === e.paid_by ? 'selected' : '') + '>' + m.name + '</option>'; }).join(''); openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div></div><div class="form-row"><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div></div><div class="form-row"><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="no" ' + (e.recurring === 'no' || !e.recurring ? 'selected' : '') + '>No</option><option value="monthly" ' + (e.recurring === 'monthly' ? 'selected' : '') + '>Monthly</option><option value="yearly" ' + (e.recurring === 'yearly' ? 'selected' : '') + '>Yearly</option></select></div><div class="form-group"><label>Paid By</label><select id="edit-exp-paid">' + paidOpts + '</select></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value, paid_by: document.getElementById('edit-exp-paid').value || null, notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); }); }
 
 // ===== REPORTS =====
 function renderReports() {
