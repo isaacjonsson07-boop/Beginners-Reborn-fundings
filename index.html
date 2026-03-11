@@ -103,7 +103,7 @@
     .data-table tr:hover td{background:rgba(62,207,142,.02)}
     .data-table .amount{font-family:JetBrains Mono,monospace;font-weight:600;font-size:.85rem}
     .data-table .date{color:var(--text-muted);font-size:.78rem}
-    .data-table .actions{display:flex;gap:.2rem;white-space:nowrap;align-items:center}
+    .data-table .actions{display:inline-flex;gap:.2rem;white-space:nowrap;align-items:center}
     .leaderboard-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .4rem;border-radius:6px;transition:background .15s}
     .leaderboard-item:hover{background:rgba(255,255,255,.02)}
     .lb-rank{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.8rem;width:1.6rem;height:1.6rem;display:flex;align-items:center;justify-content:center;border-radius:4px;background:var(--bg-secondary);color:var(--text-muted)}
@@ -464,7 +464,8 @@ async function deleteMember(id) { if (!canDeleteMember()) { toast('No permission
 async function editMember(id) {
   if (!canEditMember()) { toast('No permission', 'error'); return; }
   var m = teamMembers.find(function(x) { return x.id === id; });
-  var roleOpts = ['Owner','Admin','Mod','Member'].map(function(r) { return '<option value="' + r + '" ' + (r === m.role ? 'selected' : '') + '>' + r + '</option>'; }).join('');
+  var availableRoles = currentUser.role === 'Owner' ? ['Owner','Admin','Mod','Member'] : ['Admin','Mod','Member'];
+  var roleOpts = availableRoles.map(function(r) { return '<option value="' + r + '" ' + (r === m.role ? 'selected' : '') + '>' + r + '</option>'; }).join('');
   var statusOpts = ['online','idle','offline'].map(function(s) { return '<option value="' + s + '" ' + (s === m.status ? 'selected' : '') + '>' + s + '</option>'; }).join('');
   openModal('Edit Member', '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="edit-tm-name" value="' + m.name + '"/></div><div class="form-group"><label>Role</label><select id="edit-tm-role">' + roleOpts + '</select></div><div class="form-group"><label>Status</label><select id="edit-tm-status">' + statusOpts + '</select></div></div>', async function() {
     await sb.from('team_members').update({ name: document.getElementById('edit-tm-name').value.trim(), role: document.getElementById('edit-tm-role').value, status: document.getElementById('edit-tm-status').value }).eq('id', id);
