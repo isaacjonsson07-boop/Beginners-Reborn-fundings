@@ -25,8 +25,16 @@
     }
     body{font-family:Inter,-apple-system,sans-serif;background:var(--bg-root);color:var(--text-primary);min-height:100vh;line-height:1.6}
 
+    /* ===== LOADING SCREEN ===== */
+    .loading-screen{position:fixed;inset:0;background:var(--bg-root);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s}
+    .loading-screen.hidden{opacity:0;pointer-events:none}
+    .loading-screen img{width:100px;height:100px;margin-bottom:1rem;animation:logoPulse 1.5s ease-in-out infinite}
+    .loading-screen .loading-text{font-family:JetBrains Mono,monospace;font-size:.8rem;color:var(--text-muted);letter-spacing:2px}
+    @keyframes logoPulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+
     /* ===== ONBOARDING SCREEN ===== */
-    .onboarding-overlay{position:fixed;inset:0;background:var(--bg-root);z-index:500;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+    .onboarding-overlay{position:fixed;inset:0;background:var(--bg-root);z-index:500;display:none;align-items:center;justify-content:center;transition:opacity .3s}
+    .onboarding-overlay.visible{display:flex}
     .onboarding-overlay.hidden{opacity:0;pointer-events:none}
     .onboarding-box{text-align:center;max-width:420px;width:90%}
     .onboarding-box .logo-big{font-family:JetBrains Mono,monospace;font-weight:700;font-size:2rem;color:var(--green);margin-bottom:.25rem}
@@ -39,9 +47,6 @@
     .onboarding-box .ob-btn:hover{background:#34b87a;box-shadow:0 0 30px var(--green-glow-strong)}
     .onboarding-box .ob-btn:disabled{opacity:.4;cursor:not-allowed}
     .onboarding-box .ob-hint{font-size:.75rem;color:var(--text-muted);margin-top:1rem}
-    .ob-glow{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(62,207,142,.15) 0%,transparent 70%);margin:0 auto 1.5rem}
-    .ob-glow-inner{width:60px;height:60px;border-radius:50%;background:var(--green);margin:30px auto;display:flex;align-items:center;justify-content:center}
-    .ob-glow-inner svg{width:30px;height:30px;color:#000}
 
     /* ===== LAYOUT ===== */
     .app-layout{display:flex;min-height:100vh}
@@ -155,10 +160,16 @@
 </head>
 <body>
 
+<!-- LOADING SCREEN -->
+<div class="loading-screen" id="loading-screen">
+  <img src="logo.png" alt="BR" />
+  <div class="loading-text">LOADING</div>
+</div>
+
 <!-- ONBOARDING -->
 <div class="onboarding-overlay" id="onboarding">
   <div class="onboarding-box">
-    <div class="ob-glow"><div class="ob-glow-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div></div>
+    <img src="logo.png" alt="BR" style="width:100px;height:100px;margin-bottom:1rem" />
     <div class="logo-big">BR Funding</div>
     <div class="logo-sub">Manager</div>
     <p class="welcome-text">Welcome! Enter your name to get started.</p>
@@ -178,7 +189,7 @@
 
 <div class="app-wrapper" id="app-wrapper">
   <aside class="sidebar">
-    <div class="sidebar-logo"><div class="brand">BR Funding</div><div class="sub">Manager</div></div>
+    <div class="sidebar-logo"><div style="display:flex;align-items:center;gap:.5rem"><img src="logo.png" alt="BR" style="width:28px;height:28px" /><div><div class="brand">BR Funding</div><div class="sub">Manager</div></div></div></div>
     <div class="sidebar-user" id="sidebar-user"></div>
     <nav class="sidebar-nav">
       <a class="nav-item active" data-page="dashboard" onclick="navigate(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
@@ -320,7 +331,11 @@ obBtn.addEventListener('click', async function() {
 
 async function checkExistingUser() {
   var userId = localStorage.getItem('br_user_id');
-  if (!userId) { document.getElementById('onboarding').style.display = 'flex'; return; }
+  if (!userId) {
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('onboarding').classList.add('visible');
+    return;
+  }
   var result = await sb.from('team_members').select('*').eq('id', userId).single();
   if (result.data) {
     currentUser = result.data;
@@ -329,12 +344,14 @@ async function checkExistingUser() {
   } else {
     localStorage.removeItem('br_user_id');
     localStorage.removeItem('br_user_name');
-    document.getElementById('onboarding').style.display = 'flex';
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('onboarding').classList.add('visible');
   }
 }
 
 function showApp() {
-  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('onboarding').classList.remove('visible');
   document.getElementById('app-wrapper').classList.add('visible');
   renderSidebarUser();
   loadAll();
@@ -346,7 +363,7 @@ function signOut() {
   localStorage.removeItem('br_user_name');
   currentUser = null;
   document.getElementById('app-wrapper').classList.remove('visible');
-  document.getElementById('onboarding').classList.remove('hidden');
+  document.getElementById('onboarding').classList.add('visible');
   document.getElementById('ob-name').value = '';
   document.getElementById('ob-submit').disabled = true;
   document.getElementById('ob-submit').textContent = 'Join Team';
