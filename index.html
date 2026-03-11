@@ -222,12 +222,21 @@
             <div class="form-row">
               <div class="form-group"><label>Date</label><input type="date" id="exp-date" required /></div>
               <div class="form-group"><label>Recurring?</label><select id="exp-recurring"><option value="no">No</option><option value="monthly">Yes (monthly)</option><option value="yearly">Yes (yearly)</option></select></div>
-              <div class="form-group"><label>Notes (optional)</label><input type="text" id="exp-notes" placeholder="Additional details..." /></div>
+              <div class="form-group"><label>Paid By</label><select id="exp-paid-by"></select></div>
             </div>
+            <div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes (optional)</label><input type="text" id="exp-notes" placeholder="Additional details..." /></div></div>
             <button type="submit" class="btn btn-primary">+ Add Expense</button>
           </form>
         </div>
         <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div><div class="table-scroll"><table class="data-table" id="expenses-table"></table></div></div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Manage Categories</div></div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+            <input type="text" id="cat-new-name" placeholder="New category name" style="flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:Inter,sans-serif;font-size:.85rem;padding:.5rem .7rem;outline:none" />
+            <button class="btn btn-primary" onclick="addCategory()">+ Add</button>
+          </div>
+          <div id="categories-list"></div>
+        </div>
       </section>
 
       <section class="page" id="page-team">
@@ -362,7 +371,7 @@ async function loadAll() {
   donations = results[0].data || []; expenses = results[1].data || []; categories = results[2].data || []; teamMembers = results[3].data || [];
   renderAll();
 }
-function renderAll() { renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderTeamPanel(); renderTeamPage(); }
+function renderAll() { renderDashboard(); renderDonations(); renderExpenses(); renderCategorySelect(); renderPaidBySelect(); renderCategoriesList(); renderTeamPanel(); renderTeamPage(); }
 
 // ===== RIGHT PANEL =====
 function renderTeamPanel() {
@@ -429,13 +438,43 @@ async function editDonation(id) { var d = donations.find(function(x) { return x.
 
 // ===== EXPENSES =====
 function renderCategorySelect() { document.getElementById('exp-category').innerHTML = categories.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join(''); }
+function renderPaidBySelect() { var opts = '<option value="">-- Select --</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '">' + m.name + '</option>'; }).join(''); document.getElementById('exp-paid-by').innerHTML = opts; }
+function renderCategoriesList() {
+  if (categories.length === 0) { document.getElementById('categories-list').innerHTML = '<div class="empty-state">No categories yet</div>'; return; }
+  document.getElementById('categories-list').innerHTML = categories.map(function(c) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .5rem;border-bottom:1px solid var(--border-light)"><span style="font-size:.85rem">' + c.name + '</span><div class="actions"><button class="btn btn-ghost btn-sm" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteCategory(\'' + c.id + '\')">Del</button></div></div>';
+  }).join('');
+}
+async function addCategory() {
+  var name = document.getElementById('cat-new-name').value.trim();
+  if (!name) return;
+  var result = await sb.from('expense_categories').insert({ name: name });
+  if (result.error) { toast('Failed to add category', 'error'); return; }
+  toast('Category added!');
+  document.getElementById('cat-new-name').value = '';
+  await loadAll();
+}
+async function editCategory(id) {
+  var c = categories.find(function(x) { return x.id === id; });
+  openModal('Edit Category', '<div class="form-group"><label>Category Name</label><input type="text" id="edit-cat-name" value="' + c.name + '"/></div>', async function() {
+    await sb.from('expense_categories').update({ name: document.getElementById('edit-cat-name').value.trim() }).eq('id', id);
+    toast('Category updated!'); closeModal(); await loadAll();
+  });
+}
+async function deleteCategory(id) {
+  var c = categories.find(function(x) { return x.id === id; });
+  openConfirm('Delete category <strong>' + c.name + '</strong>? Expenses using this category will become uncategorized.', async function() {
+    await sb.from('expense_categories').delete().eq('id', id);
+    toast('Category deleted'); await loadAll();
+  });
+}
 function renderExpenses() {
-  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="7"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) { return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring === 'monthly' ? '<span style="color:var(--amber)">Monthly</span>' : e.recurring === 'yearly' ? '<span style="color:var(--purple)">Yearly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
+  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) { return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring === 'monthly' ? '<span style="color:var(--amber)">Monthly</span>' : e.recurring === 'yearly' ? '<span style="color:var(--purple)">Yearly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.paid_by || '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button></td></tr>'; }).join('') + '</tbody>'; }
 }
 document.getElementById('exp-date').value = todayStr();
-document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
+document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value, paid_by: document.getElementById('exp-paid-by').value || null, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
 async function deleteExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); openConfirm('Delete expense <strong>' + e.description + '</strong> (' + fmt(e.amount) + ')?', async function() { await sb.from('expenses').delete().eq('id', id); toast('Expense deleted'); await loadAll(); }); }
-async function editExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join(''); openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="no" ' + (e.recurring === 'no' || !e.recurring ? 'selected' : '') + '>No</option><option value="monthly" ' + (e.recurring === 'monthly' ? 'selected' : '') + '>Monthly</option><option value="yearly" ' + (e.recurring === 'yearly' ? 'selected' : '') + '>Yearly</option></select></div><div class="form-group"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value, notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); }); }
+async function editExpense(id) { var e = expenses.find(function(x) { return x.id === id; }); var catOpts = categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === e.category_id ? 'selected' : '') + '>' + c.name + '</option>'; }).join(''); var paidOpts = '<option value="">--</option>' + teamMembers.map(function(m) { return '<option value="' + m.name + '" ' + (m.name === e.paid_by ? 'selected' : '') + '>' + m.name + '</option>'; }).join(''); openModal('Edit Expense', '<div class="form-row"><div class="form-group"><label>Description</label><input type="text" id="edit-exp-desc" value="' + e.description + '"/></div><div class="form-group"><label>Amount (\u20AC)</label><input type="number" id="edit-exp-amount" step="0.01" value="' + e.amount + '"/></div></div><div class="form-row"><div class="form-group"><label>Category</label><select id="edit-exp-cat">' + catOpts + '</select></div><div class="form-group"><label>Date</label><input type="date" id="edit-exp-date" value="' + e.date + '"/></div></div><div class="form-row"><div class="form-group"><label>Recurring</label><select id="edit-exp-rec"><option value="no" ' + (e.recurring === 'no' || !e.recurring ? 'selected' : '') + '>No</option><option value="monthly" ' + (e.recurring === 'monthly' ? 'selected' : '') + '>Monthly</option><option value="yearly" ' + (e.recurring === 'yearly' ? 'selected' : '') + '>Yearly</option></select></div><div class="form-group"><label>Paid By</label><select id="edit-exp-paid">' + paidOpts + '</select></div></div><div class="form-row"><div class="form-group" style="grid-column:1/-1"><label>Notes</label><input type="text" id="edit-exp-notes" value="' + (e.notes || '') + '"/></div></div>', async function() { await sb.from('expenses').update({ description: document.getElementById('edit-exp-desc').value.trim(), amount: parseFloat(document.getElementById('edit-exp-amount').value), category_id: document.getElementById('edit-exp-cat').value, date: document.getElementById('edit-exp-date').value, recurring: document.getElementById('edit-exp-rec').value, paid_by: document.getElementById('edit-exp-paid').value || null, notes: document.getElementById('edit-exp-notes').value.trim() || null }).eq('id', id); toast('Expense updated!'); closeModal(); await loadAll(); }); }
 
 // ===== REPORTS =====
 function renderReports() {
