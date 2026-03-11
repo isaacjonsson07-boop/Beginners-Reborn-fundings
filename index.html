@@ -129,6 +129,7 @@
     .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;width:90%;max-width:500px;transform:scale(.95);transition:transform .15s}
     .modal-overlay.open .modal{transform:scale(1)}
     .modal-title{font-family:JetBrains Mono,monospace;font-size:1rem;font-weight:600;margin-bottom:1rem}
+    .modal .form-row{grid-template-columns:1fr 1fr}
     .modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
     .mobile-header{display:none;background:var(--bg-primary);border-bottom:1px solid var(--border);padding:.75rem 1rem;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:101}
     .mobile-header .brand{font-family:JetBrains Mono,monospace;font-weight:700;font-size:.9rem;color:var(--green)}
@@ -229,19 +230,8 @@
       </section>
 
       <section class="page" id="page-team">
-        <div class="page-title">Team Management</div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Add Team Member</div></div>
-          <form id="team-form">
-            <div class="form-row">
-              <div class="form-group"><label>Name</label><input type="text" id="tm-name" required placeholder="e.g. Malcorah" /></div>
-              <div class="form-group"><label>Discord Name</label><input type="text" id="tm-discord" placeholder="e.g. malcorah#1234" /></div>
-              <div class="form-group"><label>Role</label><select id="tm-role"><option value="Owner">Owner</option><option value="Admin">Admin</option><option value="Mod">Mod</option><option value="Member" selected>Member</option></select></div>
-            </div>
-            <button type="submit" class="btn btn-primary">+ Add Member</button>
-          </form>
-        </div>
-        <div class="panel"><div class="panel-header"><div class="panel-title">All Members</div></div><div class="table-scroll"><table class="data-table" id="team-table"></table></div></div>
+        <div class="page-title">Team Members</div>
+        <div class="panel"><div class="panel-header"><div class="panel-title">All Members</div><div style="font-size:.75rem;color:var(--text-muted)">Members join automatically when they open the app</div></div><div class="table-scroll"><table class="data-table" id="team-table"></table></div></div>
       </section>
 
       <section class="page" id="page-reports">
@@ -287,7 +277,6 @@ obBtn.addEventListener('click', async function() {
   if (name.length < 2) return;
   obBtn.disabled = true;
   obBtn.textContent = 'Joining...';
-  // Check if name exists already
   var existing = await sb.from('team_members').select('*').ilike('name', name).limit(1);
   if (existing.data && existing.data.length > 0) {
     currentUser = existing.data[0];
@@ -387,7 +376,7 @@ function renderTeamPanel() {
     grouped[role].forEach(function(m) {
       var color = hashColor(m.name); var statusClass = 'status-' + (m.status || 'offline');
       var isYou = currentUser && m.id === currentUser.id;
-      html += '<div class="team-member"><div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div><div class="team-info"><div class="team-name">' + m.name + (isYou ? ' <span style="color:var(--green);font-size:.7rem">(you)</span>' : '') + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + (m.discord_name || m.role) + '</div></div></div>';
+      html += '<div class="team-member"><div class="team-avatar" style="background:' + color + '">' + getInitials(m.name) + '<div class="status-dot ' + statusClass + '"></div></div><div class="team-info"><div class="team-name">' + m.name + (isYou ? ' <span style="color:var(--green);font-size:.7rem">(you)</span>' : '') + '</div><div class="team-role ' + m.role.toLowerCase() + '">' + m.role + '</div></div></div>';
     });
   });
   if (total === 0) html = '<div class="empty-state">No team members yet</div>';
@@ -396,19 +385,19 @@ function renderTeamPanel() {
 
 // ===== TEAM PAGE =====
 function renderTeamPage() {
-  if (teamMembers.length === 0) { document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="5"><div class="empty-state">No team members yet</div></td></tr></tbody>'; return; }
-  document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Discord</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + teamMembers.map(function(m) {
-    return '<tr><td><strong>' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td style="color:var(--text-muted)">' + (m.discord_name || '\u2014') + '</td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
+  if (teamMembers.length === 0) { document.getElementById('team-table').innerHTML = '<tbody><tr><td colspan="4"><div class="empty-state">No team members yet</div></td></tr></tbody>'; return; }
+  document.getElementById('team-table').innerHTML = '<thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' + teamMembers.map(function(m) {
+    return '<tr><td><strong>' + m.name + '</strong></td><td><span style="color:' + (roleColors[m.role] || '#666') + '">' + m.role + '</span></td><td class="date">' + fmtDate(m.joined_at) + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editMember(\'' + m.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteMember(\'' + m.id + '\')">Del</button></td></tr>';
   }).join('') + '</tbody>';
 }
-document.getElementById('team-form').addEventListener('submit', async function(e) { e.preventDefault(); var result = await sb.from('team_members').insert({ name: document.getElementById('tm-name').value.trim(), discord_name: document.getElementById('tm-discord').value.trim() || null, role: document.getElementById('tm-role').value }); if (result.error) { toast('Failed to add member', 'error'); return; } toast('Team member added!'); document.getElementById('team-form').reset(); await loadAll(); });
+
 async function deleteMember(id) { var m = teamMembers.find(function(x) { return x.id === id; }); openConfirm('Remove <strong>' + m.name + '</strong> from the team?', async function() { await sb.from('team_members').delete().eq('id', id); toast('Member removed'); await loadAll(); }); }
 async function editMember(id) {
   var m = teamMembers.find(function(x) { return x.id === id; });
   var roleOpts = ['Owner','Admin','Mod','Member'].map(function(r) { return '<option value="' + r + '" ' + (r === m.role ? 'selected' : '') + '>' + r + '</option>'; }).join('');
   var statusOpts = ['online','idle','offline'].map(function(s) { return '<option value="' + s + '" ' + (s === m.status ? 'selected' : '') + '>' + s + '</option>'; }).join('');
-  openModal('Edit Member', '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="edit-tm-name" value="' + m.name + '"/></div><div class="form-group"><label>Discord</label><input type="text" id="edit-tm-discord" value="' + (m.discord_name || '') + '"/></div><div class="form-group"><label>Role</label><select id="edit-tm-role">' + roleOpts + '</select></div></div><div class="form-row"><div class="form-group"><label>Status</label><select id="edit-tm-status">' + statusOpts + '</select></div></div>', async function() {
-    await sb.from('team_members').update({ name: document.getElementById('edit-tm-name').value.trim(), discord_name: document.getElementById('edit-tm-discord').value.trim() || null, role: document.getElementById('edit-tm-role').value, status: document.getElementById('edit-tm-status').value }).eq('id', id);
+  openModal('Edit Member', '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="edit-tm-name" value="' + m.name + '"/></div><div class="form-group"><label>Role</label><select id="edit-tm-role">' + roleOpts + '</select></div><div class="form-group"><label>Status</label><select id="edit-tm-status">' + statusOpts + '</select></div></div>', async function() {
+    await sb.from('team_members').update({ name: document.getElementById('edit-tm-name').value.trim(), role: document.getElementById('edit-tm-role').value, status: document.getElementById('edit-tm-status').value }).eq('id', id);
     toast('Member updated!'); closeModal(); await loadAll();
     if (currentUser && id === currentUser.id) { currentUser.name = document.getElementById('edit-tm-name').value.trim(); currentUser.role = document.getElementById('edit-tm-role').value; renderSidebarUser(); }
   });
