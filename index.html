@@ -232,16 +232,17 @@
         <div class="two-col">
           <div class="panel"><div class="panel-header"><div class="panel-title">All Donations</div></div>
             <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;align-items:center">
-              <input type="text" id="filter-don-search" placeholder="Search donor..." oninput="renderDonations()" style="flex:1;min-width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
-              <select id="sort-don" onchange="renderDonations()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
-                <option value="date-desc">Date (newest)</option>
-                <option value="date-asc">Date (oldest)</option>
-                <option value="amount-desc">Amount (highest)</option>
-                <option value="amount-asc">Amount (lowest)</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
+              <input type="text" id="filter-don-search" placeholder="Search donor..." oninput="renderDonations()" style="width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+              <select id="sort-don-date" onchange="document.getElementById('sort-don-amount').value='';renderDonations()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
+                <option value="desc">Date (newest)</option>
+                <option value="asc">Date (oldest)</option>
               </select>
-              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-don-search').value='';document.getElementById('sort-don').value='date-desc';renderDonations()">Clear</button>
+              <select id="sort-don-amount" onchange="if(this.value)document.getElementById('sort-don-date').value='';renderDonations()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
+                <option value="">Amount</option>
+                <option value="desc">Highest first</option>
+                <option value="asc">Lowest first</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-don-search').value='';document.getElementById('sort-don-date').value='desc';document.getElementById('sort-don-amount').value='';renderDonations()">Clear</button>
             </div>
             <div class="table-scroll"><table class="data-table" id="donations-table"></table></div>
           </div>
@@ -270,18 +271,19 @@
         </div>
         <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div>
           <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;align-items:center">
-            <input type="text" id="filter-exp-search" placeholder="Search description..." oninput="renderExpenses()" style="flex:1;min-width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+            <input type="text" id="filter-exp-search" placeholder="Search..." oninput="renderExpenses()" style="width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
             <select id="filter-exp-category" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Categories</option></select>
             <select id="filter-exp-paid" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Paid By</option></select>
-            <select id="sort-exp" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
-              <option value="date-desc">Date (newest)</option>
-              <option value="date-asc">Date (oldest)</option>
-              <option value="amount-desc">Amount (highest)</option>
-              <option value="amount-asc">Amount (lowest)</option>
-              <option value="category-asc">Category (A-Z)</option>
-              <option value="paid-asc">Paid By (A-Z)</option>
+            <select id="sort-exp-date" onchange="document.getElementById('sort-exp-amount').value='';renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
+              <option value="desc">Date (newest)</option>
+              <option value="asc">Date (oldest)</option>
             </select>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-exp-search').value='';document.getElementById('filter-exp-category').value='';document.getElementById('filter-exp-paid').value='';document.getElementById('sort-exp').value='date-desc';renderExpenses()">Clear</button>
+            <select id="sort-exp-amount" onchange="if(this.value)document.getElementById('sort-exp-date').value='';renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
+              <option value="">Amount</option>
+              <option value="desc">Highest first</option>
+              <option value="asc">Lowest first</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-exp-search').value='';document.getElementById('filter-exp-category').value='';document.getElementById('filter-exp-paid').value='';document.getElementById('sort-exp-date').value='desc';document.getElementById('sort-exp-amount').value='';renderExpenses()">Clear</button>
           </div>
           <div class="table-scroll"><table class="data-table" id="expenses-table"></table></div>
         </div>
@@ -521,17 +523,15 @@ function renderLeaderboard(id, limit) { var grouped = {}; donations.forEach(func
 // ===== DONATIONS =====
 function renderDonations() {
   var search = (document.getElementById('filter-don-search').value || '').toLowerCase();
-  var sortVal = document.getElementById('sort-don').value.split('-');
-  var sortKey = sortVal[0], sortDir = sortVal[1] === 'asc' ? 1 : -1;
+  var sortAmountVal = document.getElementById('sort-don-amount').value;
+  var sortDateVal = document.getElementById('sort-don-date').value;
   var filtered = donations.filter(function(d) {
     if (search && d.donor_name.toLowerCase().indexOf(search) === -1) return false;
     return true;
   });
   filtered.sort(function(a, b) {
-    if (sortKey === 'amount') return (Number(a.amount) - Number(b.amount)) * sortDir;
-    if (sortKey === 'date') return a.date.localeCompare(b.date) * sortDir;
-    if (sortKey === 'name') return a.donor_name.localeCompare(b.donor_name) * sortDir;
-    return 0;
+    if (sortAmountVal) return (Number(a.amount) - Number(b.amount)) * (sortAmountVal === 'asc' ? 1 : -1);
+    return a.date.localeCompare(b.date) * (sortDateVal === 'asc' ? 1 : -1);
   });
   var filteredTotal = filtered.reduce(function(s, d) { return s + Number(d.amount); }, 0);
   if (filtered.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">' + (donations.length === 0 ? 'No donations yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(d) {
@@ -594,8 +594,8 @@ function renderExpenses() {
   var search = (document.getElementById('filter-exp-search').value || '').toLowerCase();
   var filterCat = document.getElementById('filter-exp-category').value;
   var filterPaid = document.getElementById('filter-exp-paid').value;
-  var sortVal = document.getElementById('sort-exp').value.split('-');
-  var sortKey = sortVal[0], sortDir = sortVal[1] === 'asc' ? 1 : -1;
+  var sortAmountVal = document.getElementById('sort-exp-amount').value;
+  var sortDateVal = document.getElementById('sort-exp-date').value;
   var filtered = expenses.filter(function(e) {
     if (search && e.description.toLowerCase().indexOf(search) === -1) return false;
     if (filterCat && e.category_id !== filterCat) return false;
@@ -603,11 +603,8 @@ function renderExpenses() {
     return true;
   });
   filtered.sort(function(a, b) {
-    if (sortKey === 'amount') return (Number(a.amount) - Number(b.amount)) * sortDir;
-    if (sortKey === 'date') return a.date.localeCompare(b.date) * sortDir;
-    if (sortKey === 'category') return ((a.expense_categories ? a.expense_categories.name : '') || '').localeCompare((b.expense_categories ? b.expense_categories.name : '') || '') * sortDir;
-    if (sortKey === 'paid') return ((a.paid_by || '')).localeCompare(b.paid_by || '') * sortDir;
-    return 0;
+    if (sortAmountVal) return (Number(a.amount) - Number(b.amount)) * (sortAmountVal === 'asc' ? 1 : -1);
+    return a.date.localeCompare(b.date) * (sortDateVal === 'asc' ? 1 : -1);
   });
   var filteredTotal = filtered.reduce(function(s, e) { return s + Number(e.amount); }, 0);
   if (filtered.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">' + (expenses.length === 0 ? 'No expenses yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(e) {
