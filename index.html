@@ -232,7 +232,7 @@
         <div class="two-col">
           <div class="panel"><div class="panel-header"><div class="panel-title">All Donations</div></div>
             <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;align-items:center">
-              <input type="text" id="filter-don-search" placeholder="Search donor..." oninput="renderDonations()" style="width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+              <input type="text" id="filter-don-search" placeholder="Search donor..." oninput="renderDonations()" style="flex:1;min-width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
               <select id="sort-don-date" onchange="document.getElementById('sort-don-amount').value='';renderDonations()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
                 <option value="desc">Date (newest)</option>
                 <option value="asc">Date (oldest)</option>
@@ -271,7 +271,7 @@
         </div>
         <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div>
           <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;align-items:center">
-            <input type="text" id="filter-exp-search" placeholder="Search..." oninput="renderExpenses()" style="width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+            <input type="text" id="filter-exp-search" placeholder="Search..." oninput="renderExpenses()" style="flex:1;min-width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
             <select id="filter-exp-category" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Categories</option></select>
             <select id="filter-exp-paid" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Paid By</option></select>
             <select id="sort-exp-date" onchange="document.getElementById('sort-exp-amount').value='';renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none">
