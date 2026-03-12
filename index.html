@@ -230,7 +230,15 @@
           </form>
         </div>
         <div class="two-col">
-          <div class="panel"><div class="panel-header"><div class="panel-title">All Donations</div></div><div class="table-scroll"><table class="data-table" id="donations-table"></table></div></div>
+          <div class="panel"><div class="panel-header"><div class="panel-title">All Donations</div></div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+              <input type="text" id="filter-don-search" placeholder="Search donor..." oninput="renderDonations()" style="flex:1;min-width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+              <input type="date" id="filter-don-from" onchange="renderDonations()" title="From date" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+              <input type="date" id="filter-don-to" onchange="renderDonations()" title="To date" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-don-search').value='';document.getElementById('filter-don-from').value='';document.getElementById('filter-don-to').value='';renderDonations()">Clear</button>
+            </div>
+            <div class="table-scroll"><table class="data-table" id="donations-table"></table></div>
+          </div>
           <div class="panel"><div class="panel-header"><div class="panel-title">Donor Leaderboard</div></div><div id="donations-leaderboard"></div></div>
         </div>
       </section>
@@ -254,7 +262,17 @@
             <button type="submit" class="btn btn-primary">+ Add Expense</button>
           </form>
         </div>
-        <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div><div class="table-scroll"><table class="data-table" id="expenses-table"></table></div></div>
+        <div class="panel"><div class="panel-header"><div class="panel-title">All Expenses</div></div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+            <input type="text" id="filter-exp-search" placeholder="Search description..." oninput="renderExpenses()" style="flex:1;min-width:140px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+            <select id="filter-exp-category" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Categories</option></select>
+            <select id="filter-exp-paid" onchange="renderExpenses()" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none"><option value="">All Paid By</option></select>
+            <input type="date" id="filter-exp-from" onchange="renderExpenses()" title="From date" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+            <input type="date" id="filter-exp-to" onchange="renderExpenses()" title="To date" style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;font-size:.8rem;padding:.4rem .6rem;outline:none" />
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('filter-exp-search').value='';document.getElementById('filter-exp-category').value='';document.getElementById('filter-exp-paid').value='';document.getElementById('filter-exp-from').value='';document.getElementById('filter-exp-to').value='';renderExpenses()">Clear</button>
+          </div>
+          <div class="table-scroll"><table class="data-table" id="expenses-table"></table></div>
+        </div>
         <div class="panel" id="panel-categories">
           <div class="panel-header"><div class="panel-title">Manage Categories</div></div>
           <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
@@ -490,13 +508,23 @@ function renderLeaderboard(id, limit) { var grouped = {}; donations.forEach(func
 
 // ===== DONATIONS =====
 function renderDonations() {
-  if (donations.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">No donations yet</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + donations.map(function(d) {
+  var search = (document.getElementById('filter-don-search').value || '').toLowerCase();
+  var fromDate = document.getElementById('filter-don-from').value;
+  var toDate = document.getElementById('filter-don-to').value;
+  var filtered = donations.filter(function(d) {
+    if (search && d.donor_name.toLowerCase().indexOf(search) === -1) return false;
+    if (fromDate && d.date < fromDate) return false;
+    if (toDate && d.date > toDate) return false;
+    return true;
+  });
+  var filteredTotal = filtered.reduce(function(s, d) { return s + Number(d.amount); }, 0);
+  if (filtered.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">' + (donations.length === 0 ? 'No donations yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(d) {
     var actions = '';
     if (canEditEntry(d)) actions += '<button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button>';
     if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button>';
     if (!actions) actions = '<span style="color:var(--text-muted);font-size:.7rem">View only</span>';
     return '<tr><td><strong>' + d.donor_name + '</strong></td><td class="amount" style="color:var(--green)">+' + fmt(d.amount) + '</td><td class="date">' + fmtDate(d.date) + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (d.logged_by || '\u2014') + '</td><td style="color:var(--text-muted)">' + (d.notes || '\u2014') + '</td><td class="actions">' + actions + '</td></tr>';
-  }).join('') + '</tbody>'; }
+  }).join('') + '<tr style="border-top:2px solid var(--border)"><td><strong>Total (' + filtered.length + ')</strong></td><td class="amount" style="color:var(--green)"><strong>+' + fmt(filteredTotal) + '</strong></td><td colspan="4"></td></tr></tbody>'; }
   renderLeaderboard('donations-leaderboard');
 }
 document.getElementById('don-date').value = todayStr();
@@ -538,13 +566,36 @@ async function deleteCategory(id) {
   });
 }
 function renderExpenses() {
-  if (expenses.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">No expenses yet</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + expenses.map(function(e) {
+  // Populate filter dropdowns
+  var catFilter = document.getElementById('filter-exp-category');
+  var catVal = catFilter.value;
+  catFilter.innerHTML = '<option value="">All Categories</option>' + categories.map(function(c) { return '<option value="' + c.id + '" ' + (c.id === catVal ? 'selected' : '') + '>' + c.name + '</option>'; }).join('');
+  var paidFilter = document.getElementById('filter-exp-paid');
+  var paidVal = paidFilter.value;
+  var paidNames = {}; expenses.forEach(function(e) { if (e.paid_by) paidNames[e.paid_by] = true; });
+  paidFilter.innerHTML = '<option value="">All Paid By</option>' + Object.keys(paidNames).sort().map(function(n) { return '<option value="' + n + '" ' + (n === paidVal ? 'selected' : '') + '>' + n + '</option>'; }).join('');
+
+  var search = (document.getElementById('filter-exp-search').value || '').toLowerCase();
+  var filterCat = document.getElementById('filter-exp-category').value;
+  var filterPaid = document.getElementById('filter-exp-paid').value;
+  var fromDate = document.getElementById('filter-exp-from').value;
+  var toDate = document.getElementById('filter-exp-to').value;
+  var filtered = expenses.filter(function(e) {
+    if (search && e.description.toLowerCase().indexOf(search) === -1) return false;
+    if (filterCat && e.category_id !== filterCat) return false;
+    if (filterPaid && e.paid_by !== filterPaid) return false;
+    if (fromDate && e.date < fromDate) return false;
+    if (toDate && e.date > toDate) return false;
+    return true;
+  });
+  var filteredTotal = filtered.reduce(function(s, e) { return s + Number(e.amount); }, 0);
+  if (filtered.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">' + (expenses.length === 0 ? 'No expenses yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(e) {
     var actions = '';
     if (canEditEntry(e)) actions += '<button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button>';
     if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button>';
     if (!actions) actions = '<span style="color:var(--text-muted);font-size:.7rem">View only</span>';
     return '<tr><td><strong>' + e.description + '</strong>' + (e.notes ? '<br><span style="color:var(--text-muted);font-size:.7rem">' + e.notes + '</span>' : '') + '</td><td class="amount" style="color:var(--red)">-' + fmt(e.amount) + '</td><td>' + (e.expense_categories ? e.expense_categories.name : '\u2014') + '</td><td class="date">' + fmtDate(e.date) + '</td><td>' + (e.recurring === 'monthly' ? '<span style="color:var(--amber)">Monthly</span>' : e.recurring === 'yearly' ? '<span style="color:var(--purple)">Yearly</span>' : '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.paid_by || '\u2014') + '</td><td style="color:var(--text-muted);font-size:.78rem">' + (e.logged_by || '\u2014') + '</td><td class="actions">' + actions + '</td></tr>';
-  }).join('') + '</tbody>'; }
+  }).join('') + '<tr style="border-top:2px solid var(--border)"><td><strong>Total (' + filtered.length + ')</strong></td><td class="amount" style="color:var(--red)"><strong>-' + fmt(filteredTotal) + '</strong></td><td colspan="6"></td></tr></tbody>'; }
 }
 document.getElementById('exp-date').value = todayStr();
 document.getElementById('expense-form').addEventListener('submit', async function(e) { e.preventDefault(); if (!canAdd()) { toast('No permission', 'error'); return; } var result = await sb.from('expenses').insert({ description: document.getElementById('exp-desc').value.trim(), amount: parseFloat(document.getElementById('exp-amount').value), category_id: document.getElementById('exp-category').value, date: document.getElementById('exp-date').value, recurring: document.getElementById('exp-recurring').value, paid_by: document.getElementById('exp-paid-by').value || null, logged_by: currentUser ? currentUser.name : null, notes: document.getElementById('exp-notes').value.trim() || null }); if (result.error) { toast('Failed to add expense', 'error'); return; } toast('Expense added!'); document.getElementById('expense-form').reset(); document.getElementById('exp-date').value = todayStr(); await loadAll(); });
