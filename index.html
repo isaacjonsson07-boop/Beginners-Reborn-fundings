@@ -99,6 +99,10 @@
     input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(69%) sepia(52%) saturate(501%) hue-rotate(107deg) brightness(92%) contrast(89%);cursor:pointer}
     .data-table{width:100%;border-collapse:collapse;border-spacing:0}
     .data-table th{text-align:left;font-size:.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;padding:.55rem .65rem;border-bottom:1px solid var(--border)}
+    .data-table th.sortable{cursor:pointer;user-select:none;transition:color .15s}
+    .data-table th.sortable:hover{color:var(--green)}
+    .data-table th.sortable.asc::after{content:' \u25B2';font-size:.5rem;color:var(--green)}
+    .data-table th.sortable.desc::after{content:' \u25BC';font-size:.5rem;color:var(--green)}
     .data-table td{padding:.55rem .65rem;border-bottom:1px solid var(--border-light);font-size:.83rem;vertical-align:middle}
     .data-table tr:hover td{background:rgba(62,207,142,.02)}
     .data-table .amount{font-family:JetBrains Mono,monospace;font-weight:600;font-size:.85rem}
@@ -317,6 +321,8 @@ var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var donations = [], expenses = [], categories = [], teamMembers = [];
 var currentUser = null;
 var dashboardChart = null, reportBarChart = null, reportPieChart = null;
+var donSort = { key: 'date', dir: 'desc' };
+var expSort = { key: 'date', dir: 'desc' };
 var roleColors = { Owner: '#f75f5f', Admin: '#f0b429', Mod: '#3b82f6', Member: '#666' };
 var avatarColors = ['#3ECF8E','#3b82f6','#f0b429','#f75f5f','#8b5cf6','#ec4899','#06b6d4','#10b981'];
 Chart.defaults.color = '#666'; Chart.defaults.borderColor = 'rgba(42,42,42,0.5)'; Chart.defaults.font.family = 'Inter';
@@ -503,14 +509,25 @@ function renderDashboardChart() { var months = {}; donations.forEach(function(d)
 function renderLeaderboard(id, limit) { var grouped = {}; donations.forEach(function(d) { grouped[d.donor_name] = (grouped[d.donor_name] || 0) + Number(d.amount); }); var sorted = Object.entries(grouped).sort(function(a, b) { return b[1] - a[1]; }); if (limit) sorted = sorted.slice(0, limit); if (sorted.length === 0) { document.getElementById(id).innerHTML = '<div class="empty-state">No donations yet</div>'; return; } document.getElementById(id).innerHTML = sorted.map(function(item, i) { return '<div class="leaderboard-item"><div class="lb-rank ' + (i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '') + '">' + (i + 1) + '</div><div class="lb-name">' + item[0] + '</div><div class="lb-amount">' + fmt(item[1]) + '</div></div>'; }).join(''); }
 
 // ===== DONATIONS =====
+function sortDon(key) { if (donSort.key === key) { donSort.dir = donSort.dir === 'asc' ? 'desc' : 'asc'; } else { donSort.key = key; donSort.dir = key === 'date' ? 'desc' : 'asc'; } renderDonations(); }
+function sortExp(key) { if (expSort.key === key) { expSort.dir = expSort.dir === 'asc' ? 'desc' : 'asc'; } else { expSort.key = key; expSort.dir = key === 'date' ? 'desc' : 'asc'; } renderExpenses(); }
+function sortClass(sortState, key) { return 'sortable' + (sortState.key === key ? ' ' + sortState.dir : ''); }
+
 function renderDonations() {
   var search = (document.getElementById('filter-don-search').value || '').toLowerCase();
   var filtered = donations.filter(function(d) {
     if (search && d.donor_name.toLowerCase().indexOf(search) === -1) return false;
     return true;
   });
+  filtered.sort(function(a, b) {
+    var dir = donSort.dir === 'asc' ? 1 : -1;
+    if (donSort.key === 'amount') return (Number(a.amount) - Number(b.amount)) * dir;
+    if (donSort.key === 'date') return a.date.localeCompare(b.date) * dir;
+    if (donSort.key === 'donor') return a.donor_name.localeCompare(b.donor_name) * dir;
+    return 0;
+  });
   var filteredTotal = filtered.reduce(function(s, d) { return s + Number(d.amount); }, 0);
-  if (filtered.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">' + (donations.length === 0 ? 'No donations yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th>Donor</th><th>Amount</th><th>Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(d) {
+  if (filtered.length === 0) { document.getElementById('donations-table').innerHTML = '<tbody><tr><td colspan="6"><div class="empty-state">' + (donations.length === 0 ? 'No donations yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('donations-table').innerHTML = '<thead><tr><th class="' + sortClass(donSort,'donor') + '" onclick="sortDon(\'donor\')">Donor</th><th class="' + sortClass(donSort,'amount') + '" onclick="sortDon(\'amount\')">Amount</th><th class="' + sortClass(donSort,'date') + '" onclick="sortDon(\'date\')">Date</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(d) {
     var actions = '';
     if (canEditEntry(d)) actions += '<button class="btn btn-ghost btn-sm" onclick="editDonation(\'' + d.id + '\')">Edit</button>';
     if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteDonation(\'' + d.id + '\')">Del</button>';
@@ -576,8 +593,17 @@ function renderExpenses() {
     if (filterPaid && e.paid_by !== filterPaid) return false;
     return true;
   });
+  filtered.sort(function(a, b) {
+    var dir = expSort.dir === 'asc' ? 1 : -1;
+    if (expSort.key === 'amount') return (Number(a.amount) - Number(b.amount)) * dir;
+    if (expSort.key === 'date') return a.date.localeCompare(b.date) * dir;
+    if (expSort.key === 'category') return ((a.expense_categories ? a.expense_categories.name : '') || '').localeCompare((b.expense_categories ? b.expense_categories.name : '') || '') * dir;
+    if (expSort.key === 'paid_by') return ((a.paid_by || '')).localeCompare(b.paid_by || '') * dir;
+    if (expSort.key === 'description') return a.description.localeCompare(b.description) * dir;
+    return 0;
+  });
   var filteredTotal = filtered.reduce(function(s, e) { return s + Number(e.amount); }, 0);
-  if (filtered.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">' + (expenses.length === 0 ? 'No expenses yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Date</th><th>Recurring</th><th>Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(e) {
+  if (filtered.length === 0) { document.getElementById('expenses-table').innerHTML = '<tbody><tr><td colspan="8"><div class="empty-state">' + (expenses.length === 0 ? 'No expenses yet' : 'No results match your filters') + '</div></td></tr></tbody>'; } else { document.getElementById('expenses-table').innerHTML = '<thead><tr><th class="' + sortClass(expSort,'description') + '" onclick="sortExp(\'description\')">Description</th><th class="' + sortClass(expSort,'amount') + '" onclick="sortExp(\'amount\')">Amount</th><th class="' + sortClass(expSort,'category') + '" onclick="sortExp(\'category\')">Category</th><th class="' + sortClass(expSort,'date') + '" onclick="sortExp(\'date\')">Date</th><th>Recurring</th><th class="' + sortClass(expSort,'paid_by') + '" onclick="sortExp(\'paid_by\')">Paid By</th><th>Logged By</th><th>Actions</th></tr></thead><tbody>' + filtered.map(function(e) {
     var actions = '';
     if (canEditEntry(e)) actions += '<button class="btn btn-ghost btn-sm" onclick="editExpense(\'' + e.id + '\')">Edit</button>';
     if (canDeleteEntry()) actions += '<button class="btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')">Del</button>';
